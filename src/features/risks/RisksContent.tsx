@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Button, Card, DataTable, type DataTableColumn } from '@solvera/pace-core/components';
+import { Alert, Button, DataTable, type DataTableColumn } from '@solvera/pace-core/components';
+import { RisksRegisterCard } from '@/features/risks/components/RisksRegisterCard';
 import { usePaceMain } from '@solvera/pace-core/hooks';
 import { usePageCan } from '@solvera/pace-core/rbac';
 import { RiskDialog } from '@/features/risks/components/RiskDialog';
@@ -139,7 +140,7 @@ export function RisksContent() {
         {!isLoading && error == null && risks.length === 0 ? (
           <p>No risks yet for this event. Use Add risk to create one.</p>
         ) : null}
-        <fieldset className="grid justify-end gap-2 print:hidden">
+        <fieldset aria-label="Risk register actions" className="grid justify-end gap-2 print:hidden">
           {canCreate ? (
             <Button type="button" onClick={openCreate}>
               Add risk
@@ -149,7 +150,7 @@ export function RisksContent() {
             Print
           </Button>
         </fieldset>
-        <Card>
+        <RisksRegisterCard>
           <DataTable
             data={risks}
             columns={columns}
@@ -167,7 +168,7 @@ export function RisksContent() {
             isLoading={isLoading}
             getRowId={(row) => String((row as Risk).id)}
           />
-        </Card>
+        </RisksRegisterCard>
       </section>
       <RiskDialog
         open={dialogOpen}
