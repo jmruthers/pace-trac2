@@ -20,8 +20,12 @@ describe('trac-nav', () => {
     ]);
   });
 
-  it('SLICE-01 exposes no nav links until domain routes register', () => {
+  it('exposes nav links only for registered routes', () => {
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/planning')).toBe(false);
-    expect(getEnabledTracNavItems()).toEqual([]);
+    expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/contacts')).toBe(true);
+    const enabled = getEnabledTracNavItems();
+    expect(enabled).toHaveLength(1);
+    expect(enabled[0]?.href).toBe('/contacts');
+    expect(enabled[0]?.label).toBe('Contacts');
   });
 });
