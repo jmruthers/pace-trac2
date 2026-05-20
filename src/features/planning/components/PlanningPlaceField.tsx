@@ -6,50 +6,18 @@ import {
 } from '@solvera/pace-core/forms';
 import { useAddressFieldSessionToken } from '@solvera/pace-core/hooks';
 import { useSecureSupabase } from '@solvera/pace-core/rbac';
+import { isOk } from '@solvera/pace-core/types';
 import { readLocationCache } from '@/features/planning/location-cache';
 import { useGoogleMapsPlanning } from '@/features/planning/context/GoogleMapsPlanningContext';
+import { readGeometryFromGoogle } from '@/features/planning/google-place-geometry';
 import { asPlanningClient } from '@/features/planning/supabase-helpers';
-import type { Coordinates, PlanningPlaceValue } from '@/features/planning/types';
+import type { PlanningPlaceValue } from '@/features/planning/types';
 
 interface PlanningPlaceFieldProps {
   label: string;
   value: PlanningPlaceValue | null;
   onChange: (value: PlanningPlaceValue | null) => void;
   required?: boolean;
-}
-
-async function readGeometryFromGoogle(placeId: string): Promise<Coordinates | undefined> {
-  const places = (
-    globalThis as unknown as {
-      google?: { maps?: { places?: { PlacesService: new (el: HTMLElement) => unknown } } };
-    }
-  ).google?.maps?.places;
-  if (places == null) return undefined;
-
-  return new Promise<Coordinates | undefined>((resolve) => {
-    const service = new places.PlacesService(document.createElement('div')) as {
-      getDetails: (
-        request: { placeId: string; fields: string[] },
-        callback: (
-          place: { geometry?: { location?: { lat: () => number; lng: () => number } } } | null,
-          status: string
-        ) => void
-      ) => void;
-    };
-    service.getDetails(
-      { placeId, fields: ['geometry', 'formatted_address', 'name', 'place_id'] },
-      (place, status) => {
-        if (status !== 'OK' || place?.geometry?.location == null) {
-          resolve(undefined);
-          return;
-        }
-        resolve({
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
-        });
-      }
-    );
-  });
 }
 
 export function PlanningPlaceField({
@@ -74,8 +42,9 @@ export function PlanningPlaceField({
     async (place: PlanningPlaceValue) => {
       let next = place;
       if (secureSupabase && place.placeId) {
-        const cached = await readLocationCache(secureSupabase, place.placeId);
-        if (cached) {
+        const cacheResult = await readLocationCache(secureSupabase, place.placeId);
+        if (isOk(cacheResult) && cacheResult.data != null) {
+          const cached = cacheResult.data;
           next = { ...next, ...cached, displayName: next.displayName || cached.displayName };
         }
       }

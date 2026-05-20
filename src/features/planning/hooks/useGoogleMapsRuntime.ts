@@ -4,8 +4,8 @@ import { asPlanningClient } from '@/features/planning/supabase-helpers';
 
 const MAPS_SCRIPT_ID = 'trac-google-maps-script';
 
-function loadMapsScript(src: string): Promise<void> {
-  return new Promise((resolve, reject) => {
+function loadMapsScript(src: string) {
+  return new Promise<void>((resolve, reject) => {
     const existing = document.getElementById(MAPS_SCRIPT_ID) as HTMLScriptElement | null;
     if (existing) {
       if (existing.dataset.loaded === 'true') {

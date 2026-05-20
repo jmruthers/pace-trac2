@@ -342,6 +342,7 @@ describe('JournalPage integration', () => {
   });
 
   it('surfaces upload failure via lifecycle when storage rejects upload', async () => {
+    const { isErr } = await import('@solvera/pace-core/types');
     const { uploadJournalImage } = await import('@/hooks/journal/journal-image-lifecycle');
     const upload = vi.fn().mockResolvedValue({ data: null, error: { message: 'upload rejected' } });
     const deleteEq = vi.fn().mockResolvedValue({ error: null });
@@ -369,14 +370,16 @@ describe('JournalPage integration', () => {
       }),
     };
 
-    await expect(
-      uploadJournalImage({
-        dbClient,
-        storageClient,
-        row: { post_id: 'post-1', organisation_id: 'org-1', created_by: 'user-1' },
-        file: new File(['x'], 'photo.png', { type: 'image/png' }),
-      })
-    ).rejects.toThrow(/upload/i);
+    const result = await uploadJournalImage({
+      dbClient,
+      storageClient,
+      row: { post_id: 'post-1', organisation_id: 'org-1', created_by: 'user-1' },
+      file: new File(['x'], 'photo.png', { type: 'image/png' }),
+    });
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.message).toMatch(/upload/i);
+    }
     expect(deleteEq).toHaveBeenCalled();
   });
 });

@@ -1,44 +1,25 @@
 import type { RBACSupabaseClient, SecureSupabaseClient } from '@solvera/pace-core/rbac';
+import type {
+  PostgrestDeleteDoubleScopedBuilder,
+  PostgrestInsertSingleBuilder,
+  PostgrestUpdateDoubleScopedBuilder,
+} from '@/lib/postgrest-fluent-builders';
+import type { LooseListResult } from '@/lib/postgrest-result-types';
 
 export type AssignmentsSupabaseClient = {
   from: (table: string) => AssignmentsQueryBuilder;
 };
 
-export type AssignmentsQueryBuilder = {
-  select: (columns?: string) => AssignmentsQueryBuilder;
-  eq: (column: string, value: string) => AssignmentsQueryBuilder;
-  order: (
-    column: string,
-    options: { ascending: boolean }
-  ) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string; code?: string } | null }>;
-  insert: (
-    row: Record<string, unknown> | Record<string, unknown>[]
-  ) => {
-    select: (columns?: string) => {
-      single: () => Promise<{
-        data: Record<string, unknown> | null;
-        error: { message: string; code?: string } | null;
-      }>;
-    };
-  };
-  update: (row: Record<string, unknown>) => {
-    eq: (column: string, value: string) => {
-      eq: (column: string, value: string) => {
-        select: (columns?: string) => {
-          single: () => Promise<{
-            data: Record<string, unknown> | null;
-            error: { message: string; code?: string } | null;
-          }>;
-        };
-      };
-    };
-  };
-  delete: () => {
-    eq: (column: string, value: string) => {
-      eq: (column: string, value: string) => Promise<{ error: { message: string; code?: string } | null }>;
-    };
-  };
+type AssignmentsReadBuilder = {
+  select: (columns?: string) => AssignmentsReadBuilder;
+  eq: (column: string, value: string) => AssignmentsReadBuilder;
+  order: (column: string, options: { ascending: boolean }) => LooseListResult;
 };
+
+export type AssignmentsQueryBuilder = AssignmentsReadBuilder &
+  PostgrestInsertSingleBuilder &
+  PostgrestUpdateDoubleScopedBuilder &
+  PostgrestDeleteDoubleScopedBuilder;
 
 export function asAssignmentsClient(
   client: RBACSupabaseClient | SecureSupabaseClient | null

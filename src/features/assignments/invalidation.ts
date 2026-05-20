@@ -11,7 +11,7 @@ import {
 export async function invalidateAssignmentsAndDependents(
   queryClient: QueryClient,
   eventId: string
-): Promise<void> {
+) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: assignmentsQueryKeys.all }),
     queryClient.invalidateQueries({ queryKey: assignmentsQueryKeys.byEvent(eventId) }),

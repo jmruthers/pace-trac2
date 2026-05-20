@@ -13,7 +13,7 @@ import {
 async function persistPlaces(
   secureSupabase: NonNullable<ReturnType<typeof asPlanningClient>>,
   places: PlanningPlaceValue[]
-): Promise<void> {
+) {
   await Promise.all(
     places.map(async (place) => {
       if (!place.placeId) return;

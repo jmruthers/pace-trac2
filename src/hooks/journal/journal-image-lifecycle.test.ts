@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
+import { isErr, isOk } from '@solvera/pace-core/types';
 import {
   uploadJournalImage,
   deleteJournalImage,
   removeStorageObjectsForPost,
-  JournalImageLifecycleError,
   type JournalDbClient,
   type JournalStorageClient,
 } from '@/hooks/journal/journal-image-lifecycle';
@@ -59,14 +59,17 @@ describe('journal-image-lifecycle', () => {
     upload.mockResolvedValue({ data: { path: 'img-1' }, error: null });
     const file = new File(['x'], 'a.png', { type: 'image/png' });
 
-    const image = await uploadJournalImage({
+    const result = await uploadJournalImage({
       dbClient,
       storageClient,
       row: { post_id: 'post-1', organisation_id: 'org-1', created_by: 'user-1' },
       file,
     });
 
-    expect(image.id).toBe('img-1');
+    expect(isOk(result)).toBe(true);
+    if (isOk(result)) {
+      expect(result.data.id).toBe('img-1');
+    }
     expect(insert).toHaveBeenCalled();
     expect(upload).toHaveBeenCalledWith('img-1', file);
   });
@@ -76,15 +79,14 @@ describe('journal-image-lifecycle', () => {
     upload.mockResolvedValue({ data: null, error: { message: 'upload denied' } });
     const file = new File(['x'], 'a.png', { type: 'image/png' });
 
-    await expect(
-      uploadJournalImage({
-        dbClient,
-        storageClient,
-        row: { post_id: 'post-1', organisation_id: 'org-1', created_by: 'user-1' },
-        file,
-      })
-    ).rejects.toThrow(JournalImageLifecycleError);
+    const result = await uploadJournalImage({
+      dbClient,
+      storageClient,
+      row: { post_id: 'post-1', organisation_id: 'org-1', created_by: 'user-1' },
+      file,
+    });
 
+    expect(isErr(result)).toBe(true);
     expect(deleteEq).toHaveBeenCalled();
   });
 
@@ -111,7 +113,8 @@ describe('journal-image-lifecycle', () => {
       }),
     };
 
-    await deleteJournalImage({ dbClient, storageClient, imageId: 'img-1' });
+    const result = await deleteJournalImage({ dbClient, storageClient, imageId: 'img-1' });
+    expect(isOk(result)).toBe(true);
     expect(order).toEqual(['storage', 'db']);
   });
 
@@ -131,9 +134,11 @@ describe('journal-image-lifecycle', () => {
       }),
     };
 
-    await expect(
-      deleteJournalImage({ dbClient, storageClient, imageId: 'img-1' })
-    ).rejects.toThrow(/storage/i);
+    const result = await deleteJournalImage({ dbClient, storageClient, imageId: 'img-1' });
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.message).toMatch(/storage/i);
+    }
     expect(deleteEq).not.toHaveBeenCalled();
   });
 
@@ -142,7 +147,10 @@ describe('journal-image-lifecycle', () => {
       storage: { from: () => ({ upload: vi.fn(), remove: vi.fn() }) },
     };
     const result = await removeStorageObjectsForPost(storageClient, []);
-    expect(result).toEqual({ removed: [], failures: [] });
+    expect(isOk(result)).toBe(true);
+    if (isOk(result)) {
+      expect(result.data).toEqual({ removed: [], failures: [] });
+    }
   });
 
   it('removeStorageObjectsForPost removes all ids on success', async () => {
@@ -151,12 +159,15 @@ describe('journal-image-lifecycle', () => {
       storage: { from: () => ({ upload: vi.fn(), remove }) },
     };
     const result = await removeStorageObjectsForPost(storageClient, ['a', 'b']);
-    expect(result.removed).toEqual(['a', 'b']);
+    expect(isOk(result)).toBe(true);
+    if (isOk(result)) {
+      expect(result.data.removed).toEqual(['a', 'b']);
+    }
     expect(remove).toHaveBeenCalledWith(['a', 'b']);
   });
 
   it('reports rollback failure when row delete fails after upload error', async () => {
-    const { storageClient, dbClient, upload } = createMocks();
+    const { storageClient, upload } = createMocks();
     upload.mockResolvedValue({ data: null, error: { message: 'upload denied' } });
     const deleteEq = vi.fn(async () => ({ error: { message: 'db fail' } }));
     const failingDb: JournalDbClient = {
@@ -181,15 +192,17 @@ describe('journal-image-lifecycle', () => {
       }),
     };
 
-    await expect(
-      uploadJournalImage({
-        dbClient: failingDb,
-        storageClient,
-        row: { post_id: 'post-1', organisation_id: 'org-1', created_by: 'user-1' },
-        file: new File(['x'], 'a.png', { type: 'image/png' }),
-      })
-    ).rejects.toThrow(/could not be rolled back/i);
-    void dbClient;
+    const result = await uploadJournalImage({
+      dbClient: failingDb,
+      storageClient,
+      row: { post_id: 'post-1', organisation_id: 'org-1', created_by: 'user-1' },
+      file: new File(['x'], 'a.png', { type: 'image/png' }),
+    });
+
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.message).toMatch(/could not be rolled back/i);
+    }
   });
 
   it('removeStorageObjectsForPost reports failures', async () => {
@@ -199,7 +212,10 @@ describe('journal-image-lifecycle', () => {
     };
 
     const result = await removeStorageObjectsForPost(storageClient, ['a', 'b']);
-    expect(result.failures).toEqual(['a', 'b']);
-    expect(result.removed).toEqual([]);
+    expect(isOk(result)).toBe(true);
+    if (isOk(result)) {
+      expect(result.data.failures).toEqual(['a', 'b']);
+      expect(result.data.removed).toEqual([]);
+    }
   });
 });

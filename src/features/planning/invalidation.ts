@@ -11,7 +11,7 @@ import {
 export async function invalidatePlanningAndDependents(
   queryClient: QueryClient,
   eventId: string
-): Promise<void> {
+) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: planningQueryKeys.all }),
     queryClient.invalidateQueries({ queryKey: planningQueryKeys.resource('transport', eventId) }),

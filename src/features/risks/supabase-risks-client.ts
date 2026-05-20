@@ -1,27 +1,27 @@
 import type { RBACSupabaseClient } from '@solvera/pace-core/rbac';
 import type { Risk, RiskFormData } from '@/features/risks/types';
-
-type SupabaseError = { message: string; code?: string };
-
-type SingleResult<T> = Promise<{ data: T | null; error: SupabaseError | null }>;
+import type { DeleteResult, ListResult, SingleResult } from '@/lib/postgrest-result-types';
 
 type RiskInsertRow = Record<string, unknown> & {
   event_id: string;
   organisation_id: string;
 };
 
-interface RisksTableClient {
+type RisksSelectBuilder = {
   select(columns: string): {
     eq(column: string, value: string): {
-      order(column: string, options: { ascending: boolean }): Promise<{
-        data: Risk[] | null;
-        error: SupabaseError | null;
-      }>;
+      order(column: string, options: { ascending: boolean }): ListResult<Risk>;
     };
   };
+};
+
+type RisksInsertBuilder = {
   insert(rows: RiskInsertRow[]): {
     select(): { single(): SingleResult<Risk> };
   };
+};
+
+type RisksUpdateBuilder = {
   update(payload: Record<string, unknown>): {
     eq(column: string, value: string): {
       eq(column: string, value: string): {
@@ -29,12 +29,20 @@ interface RisksTableClient {
       };
     };
   };
+};
+
+type RisksDeleteBuilder = {
   delete(): {
     eq(column: string, value: string): {
-      eq(column: string, value: string): Promise<{ error: SupabaseError | null }>;
+      eq(column: string, value: string): DeleteResult;
     };
   };
-}
+};
+
+type RisksTableClient = RisksSelectBuilder &
+  RisksInsertBuilder &
+  RisksUpdateBuilder &
+  RisksDeleteBuilder;
 
 export function risksTable(client: RBACSupabaseClient): RisksTableClient {
   return client.from('trac_risks') as RisksTableClient;

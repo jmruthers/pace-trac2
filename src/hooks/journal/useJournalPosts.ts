@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEvents, useToast } from '@solvera/pace-core/hooks';
 import { useSecureSupabase, useStorageCapableClient } from '@solvera/pace-core/rbac';
 import { useUnifiedAuthContext } from '@solvera/pace-core';
+import { isErr } from '@solvera/pace-core/types';
 import type {
   JournalPost,
   JournalPostInsert,
@@ -101,7 +102,7 @@ export function useJournalPosts() {
           continue;
         }
         try {
-          await uploadJournalImage({
+          const uploadResult = await uploadJournalImage({
             dbClient,
             storageClient: storage,
             row: {
@@ -111,6 +112,9 @@ export function useJournalPosts() {
             },
             file,
           });
+          if (isErr(uploadResult)) {
+            throw new JournalImageLifecycleError(uploadResult.error.message);
+          }
         } catch (err) {
           const message =
             err instanceof JournalImageLifecycleError
@@ -271,7 +275,10 @@ export function useJournalPosts() {
           storageClient as unknown as JournalStorageClient,
           imageIds
         );
-        if (cleanup.failures.length > 0) {
+        if (!cleanup.ok) {
+          throw new JournalImageLifecycleError(cleanup.error.message);
+        }
+        if (cleanup.data.failures.length > 0) {
           throw new JournalImageLifecycleError(
             'Post deleted but some images could not be removed from storage. Storage cleanup may be incomplete.'
           );
@@ -296,11 +303,14 @@ export function useJournalPosts() {
       if (secureSupabase == null || storageClient == null) {
         throw new Error('Storage is not available.');
       }
-      await deleteJournalImage({
+      const deleteResult = await deleteJournalImage({
         dbClient: secureSupabase as unknown as JournalDbClient,
         storageClient: storageClient as unknown as JournalStorageClient,
         imageId,
       });
+      if (isErr(deleteResult)) {
+        throw new JournalImageLifecycleError(deleteResult.error.message);
+      }
     },
     onSuccess: async () => {
       await invalidate();
