@@ -9,6 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "setup": "node node_modules/@solvera/pace-core/scripts/setup.cjs",
+    "type-check": "tsc -b --noEmit",
+    "test": "vitest run -c vitest.config.ts",
+    "test:coverage": "vitest run -c vitest.config.ts --coverage --coverage.provider=v8",
     "validate": "node node_modules/@solvera/pace-core/scripts/validate.cjs",
     "validate-authority": "node node_modules/@solvera/pace-core/scripts/validate-authority.cjs",
     "env:dev": "node node_modules/@solvera/pace-core/scripts/switch-supabase-env.cjs dev",
@@ -27,24 +30,27 @@
     "react-router-dom": "^6.0.0 || ^7.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@eslint/js": "^9.39.0",
     "@tailwindcss/vite": "^4.0.0",
+    "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.0.0",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^2.1.9",
+    "eslint": "^9.39.0",
+    "@typescript-eslint/parser": "^8.59.2",
     "@vitest/coverage-istanbul": "^2.0.0",
-    "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "happy-dom": "^20.0.0",
     "tailwindcss": "^4.0.0",
-    "typescript": "~6.0.2",
+    "typescript": "^5.9.0",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",
-    "vitest": "^2.0.0",
-    "eslint-plugin-react": "^7.37.0"
+    "vitest": "^2.0.0"
   }
 }

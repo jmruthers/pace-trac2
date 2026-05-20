@@ -10,6 +10,8 @@ export default defineConfig({
   ],
   optimizeDeps: {
     exclude: ['@solvera/pace-core', 'react-router-dom'],
+    // Pre-bundle CJS deps used by react-router (avoids splitCookiesString ESM export error in dev).
+    include: ['cookie', 'set-cookie-parser'],
   },
   resolve: {
     alias: {
