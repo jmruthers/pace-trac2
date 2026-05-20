@@ -20,12 +20,11 @@ describe('trac-nav', () => {
     ]);
   });
 
-  it('exposes nav links only for registered routes', () => {
-    expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/planning')).toBe(false);
+  it('enables Planning and Contacts nav for registered routes', () => {
+    expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/planning')).toBe(true);
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/contacts')).toBe(true);
-    const enabled = getEnabledTracNavItems();
-    expect(enabled).toHaveLength(1);
-    expect(enabled[0]?.href).toBe('/contacts');
-    expect(enabled[0]?.label).toBe('Contacts');
+    const items = getEnabledTracNavItems();
+    expect(items.map((item) => item.href)).toContain('/planning');
+    expect(items.map((item) => item.href)).toContain('/contacts');
   });
 });
