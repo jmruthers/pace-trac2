@@ -8,7 +8,7 @@ vi.mock('@solvera/pace-core/components', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@solvera/pace-core/components')>();
   return {
     ...actual,
-    Form: function MockForm<T extends { title: string; content: string }>({
+    Form: function MockForm<T extends { title: string; content: string; status: string }>({
       children,
       onSubmit,
       defaultValues,
@@ -24,6 +24,7 @@ vi.mock('@solvera/pace-core/components', async (importOriginal) => {
             onSubmit({
               title: String(defaultValues?.title ?? ''),
               content: String(defaultValues?.content ?? ''),
+              status: (defaultValues?.status as 'draft' | 'published') ?? 'published',
             } as T);
           }}
         >
@@ -41,7 +42,8 @@ vi.mock('@solvera/pace-core/components', async (importOriginal) => {
       render?: (props: { field: { value: string; onChange: (v: string) => void; onBlur: () => void } }) => ReactNode;
     }) {
       const field = {
-        value: name === 'title' ? 'Title value' : 'Content value',
+        value:
+          name === 'title' ? 'Title value' : name === 'status' ? 'published' : 'Content value',
         onChange: vi.fn(),
         onBlur: vi.fn(),
       };
@@ -68,7 +70,9 @@ describe('JournalPostEditor', () => {
     );
     expect(screen.getByText('New journal entry')).toBeInTheDocument();
     expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/content/i)).toBeInTheDocument();
+    expect(document.getElementById('journal-content')).toBeInTheDocument();
+    expect(screen.getByText('Bold')).toBeInTheDocument();
+    expect(screen.getByText('Status')).toBeInTheDocument();
   });
 
   it('submits save with form values', async () => {
@@ -79,6 +83,7 @@ describe('JournalPostEditor', () => {
     expect(onSave).toHaveBeenCalledWith({
       title: '',
       content: '',
+      status: 'published',
       images: [],
     });
   });

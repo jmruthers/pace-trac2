@@ -106,7 +106,12 @@ describe('useJournalPosts', () => {
   it('creates a post without images', async () => {
     const { result } = renderHook(() => useJournalPosts(), { wrapper });
     await waitFor(() => expect(result.current.posts).toHaveLength(1));
-    await result.current.createPost({ title: 'New entry', content: 'Notes', images: [] });
+    await result.current.createPost({
+      title: 'New entry',
+      content: 'Notes',
+      status: 'published',
+      images: [],
+    });
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Journal entry saved' }));
   });
 
@@ -118,6 +123,7 @@ describe('useJournalPosts', () => {
       postId: post.id,
       title: 'Updated',
       content: 'Revised',
+      status: 'published',
       images: [],
     });
     await result.current.deletePost(post);
@@ -186,7 +192,12 @@ describe('useJournalPosts', () => {
     const { result } = renderHook(() => useJournalPosts(), { wrapper });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     const file = new File(['bytes'], 'photo.png', { type: 'image/png' });
-    await result.current.createPost({ title: 'With photo', content: 'Pic', images: [file] });
+    await result.current.createPost({
+      title: 'With photo',
+      content: 'Pic',
+      status: 'published',
+      images: [file],
+    });
     expect(upload).toHaveBeenCalled();
   });
 

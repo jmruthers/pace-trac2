@@ -1,9 +1,14 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEvents, useToast } from '@solvera/pace-core/hooks';
 import { useSecureSupabase, useStorageCapableClient } from '@solvera/pace-core/rbac';
 import { useUnifiedAuthContext } from '@solvera/pace-core';
-import type { JournalPost, JournalPostInsert, JournalPostUpdate } from '@/types/journal';
+import type {
+  JournalPost,
+  JournalPostInsert,
+  JournalPostStatus,
+  JournalPostUpdate,
+} from '@/types/journal';
 import {
   deleteJournalImage,
   JournalImageLifecycleError,
@@ -29,6 +34,7 @@ export function useJournalPosts() {
   const storageClient = useStorageCapableClient();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const eventId = selectedEvent?.id ?? '';
   const organisationId =
@@ -78,15 +84,17 @@ export function useJournalPosts() {
   }, [queryClient, journalQueryKey]);
 
   const uploadImagesForPost = useCallback(
-    async (postId: string, files: File[]) => {
+    async (postId: string, files: File[], onProgress?: (percent: number) => void) => {
       if (storageClient == null) {
         throw new JournalImageLifecycleError('Storage is not available. Try again after signing in.');
       }
       const dbClient = secureSupabase as unknown as JournalDbClient;
       const storage = storageClient as unknown as JournalStorageClient;
       const errors: string[] = [];
+      const total = files.length;
 
-      for (const file of files) {
+      for (let index = 0; index < total; index += 1) {
+        const file = files[index]!;
         const validationError = validateJournalImageFile(file);
         if (validationError != null) {
           errors.push(`${file.name}: ${validationError}`);
@@ -111,7 +119,9 @@ export function useJournalPosts() {
                 ? err.message
                 : 'Upload failed.';
           errors.push(`${file.name}: ${message}`);
+          continue;
         }
+        onProgress?.(Math.round(((index + 1) / total) * 100));
       }
 
       if (errors.length > 0) {
@@ -122,7 +132,12 @@ export function useJournalPosts() {
   );
 
   const createPostMutation = useMutation({
-    mutationFn: async (input: { title: string; content: string; images: File[] }) => {
+    mutationFn: async (input: {
+      title: string;
+      content: string;
+      status: JournalPostStatus;
+      images: File[];
+    }) => {
       if (secureSupabase == null || !userId || !eventId || !organisationId) {
         throw new Error('Journal is not ready. Select an event and try again.');
       }
@@ -131,7 +146,7 @@ export function useJournalPosts() {
         organisation_id: organisationId,
         title: input.title.trim(),
         content: input.content,
-        status: 'published',
+        status: input.status,
         created_by: userId,
         updated_by: userId,
       };
@@ -158,15 +173,18 @@ export function useJournalPosts() {
       }
 
       if (input.images.length > 0) {
-        await uploadImagesForPost(data.id, input.images);
+        setUploadProgress(0);
+        await uploadImagesForPost(data.id, input.images, (percent) => setUploadProgress(percent));
       }
       return data as JournalPost;
     },
     onSuccess: async () => {
+      setUploadProgress(null);
       await invalidate();
       toast({ title: 'Journal entry saved' });
     },
     onError: (error: Error) => {
+      setUploadProgress(null);
       toast({
         title: 'Could not save journal entry',
         description: error.message,
@@ -180,6 +198,7 @@ export function useJournalPosts() {
       postId: string;
       title: string;
       content: string;
+      status: JournalPostStatus;
       images: File[];
     }) => {
       if (secureSupabase == null || !userId) {
@@ -188,6 +207,7 @@ export function useJournalPosts() {
       const updates: JournalPostUpdate = {
         title: input.title.trim(),
         content: input.content,
+        status: input.status,
         updated_by: userId,
       };
       const client = secureSupabase as {
@@ -207,14 +227,19 @@ export function useJournalPosts() {
       }
 
       if (input.images.length > 0) {
-        await uploadImagesForPost(input.postId, input.images);
+        setUploadProgress(0);
+        await uploadImagesForPost(input.postId, input.images, (percent) =>
+          setUploadProgress(percent)
+        );
       }
     },
     onSuccess: async () => {
+      setUploadProgress(null);
       await invalidate();
       toast({ title: 'Journal entry updated' });
     },
     onError: (error: Error) => {
+      setUploadProgress(null);
       toast({
         title: 'Could not update journal entry',
         description: error.message,
@@ -308,5 +333,6 @@ export function useJournalPosts() {
       updatePostMutation.isPending ||
       deletePostMutation.isPending ||
       deleteImageMutation.isPending,
+    uploadProgress,
   };
 }

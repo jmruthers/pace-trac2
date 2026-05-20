@@ -7,7 +7,7 @@ import {
   LoadingSpinner,
 } from '@solvera/pace-core/components';
 import { PagePermissionGuard, useResourcePermissions } from '@solvera/pace-core/rbac';
-import type { JournalPost } from '@/types/journal';
+import type { JournalPost, JournalPostStatus } from '@/types/journal';
 import { JournalPostEditor } from '@/components/journal/JournalPostEditor';
 import { JournalPostList } from '@/components/journal/JournalPostList';
 import { useJournalPosts } from '@/hooks/journal/useJournalPosts';
@@ -25,6 +25,7 @@ function JournalPageContent() {
     deleteImage,
     isMutating,
     isDeletingImage,
+    uploadProgress,
   } = useJournalPosts();
 
   const [editorOpen, setEditorOpen] = useState(false);
@@ -41,12 +42,18 @@ function JournalPageContent() {
   }, []);
 
   const handleSave = useCallback(
-    async (values: { title: string; content: string; images: File[] }) => {
+    async (values: {
+      title: string;
+      content: string;
+      status: JournalPostStatus;
+      images: File[];
+    }) => {
       if (editingPost != null) {
         await updatePost({
           postId: editingPost.id,
           title: values.title,
           content: values.content,
+          status: values.status,
           images: values.images,
         });
       } else {
@@ -107,6 +114,7 @@ function JournalPageContent() {
         onDelete={editingPost != null ? handleDeletePost : undefined}
         canDelete={canDelete}
         isSubmitting={isMutating}
+        uploadProgress={uploadProgress}
       />
     </section>
   );

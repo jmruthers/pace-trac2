@@ -13,26 +13,41 @@ import {
   Label,
   Progress,
   SaveActions,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Textarea,
 } from '@solvera/pace-core/components';
 import { z } from '@solvera/pace-core/utils';
-import type { JournalPost } from '@/types/journal';
+import type { JournalPost, JournalPostStatus } from '@/types/journal';
+import { insertMarkdownWrapper } from '@/utils/journal-editor';
 
 const journalFormSchema = z.object({
   title: z.string().min(1, 'Title is required').max(500, 'Title is too long'),
   content: z.string().max(100_000, 'Content is too long'),
+  status: z.enum(['draft', 'published']),
 });
 
 type JournalFormValues = z.infer<typeof journalFormSchema>;
+
+export interface JournalPostSaveValues {
+  title: string;
+  content: string;
+  status: JournalPostStatus;
+  images: File[];
+}
 
 interface JournalPostEditorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   post?: JournalPost | null;
-  onSave: (values: { title: string; content: string; images: File[] }) => Promise<void>;
+  onSave: (values: JournalPostSaveValues) => Promise<void>;
   onDelete?: () => Promise<void>;
   canDelete?: boolean;
   isSubmitting?: boolean;
+  uploadProgress?: number | null;
 }
 
 export function JournalPostEditor({
@@ -43,10 +58,10 @@ export function JournalPostEditor({
   onDelete,
   canDelete = false,
   isSubmitting = false,
+  uploadProgress = null,
 }: JournalPostEditorProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [pendingImages, setPendingImages] = useState<File[]>([]);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const isEdit = post != null;
   const dialogTitle = isEdit ? 'Edit journal entry' : 'New journal entry';
@@ -54,25 +69,19 @@ export function JournalPostEditor({
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       setPendingImages([]);
-      setUploadProgress(null);
     }
     onOpenChange(next);
   };
 
   const handleSubmit = async (values: JournalFormValues) => {
-    setUploadProgress(pendingImages.length > 0 ? 10 : null);
-    try {
-      await onSave({
-        title: values.title,
-        content: values.content,
-        images: pendingImages,
-      });
-      setPendingImages([]);
-      setUploadProgress(null);
-      handleOpenChange(false);
-    } catch {
-      setUploadProgress(null);
-    }
+    await onSave({
+      title: values.title,
+      content: values.content,
+      status: values.status,
+      images: pendingImages,
+    });
+    setPendingImages([]);
+    handleOpenChange(false);
   };
 
   const handleFilesSelected = (files: FileList | null) => {
@@ -81,6 +90,26 @@ export function JournalPostEditor({
     if (fileInputRef.current != null) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const applyMarkdown = (
+    before: string,
+    after: string,
+    onChange: (value: string) => void,
+    current: string
+  ) => {
+    const el = document.getElementById('journal-content') as HTMLTextAreaElement | null;
+    const start = el?.selectionStart ?? current.length;
+    const end = el?.selectionEnd ?? current.length;
+    const { value, cursor } = insertMarkdownWrapper(current, start, end, before, after);
+    onChange(value);
+    requestAnimationFrame(() => {
+      const textarea = document.getElementById('journal-content') as HTMLTextAreaElement | null;
+      if (textarea != null) {
+        textarea.focus();
+        textarea.setSelectionRange(cursor, cursor);
+      }
+    });
   };
 
   return (
@@ -97,6 +126,7 @@ export function JournalPostEditor({
               defaultValues={{
                 title: post?.title ?? '',
                 content: post?.content ?? '',
+                status: post?.status ?? 'published',
               }}
               onSubmit={handleSubmit}
             >
@@ -104,16 +134,67 @@ export function JournalPostEditor({
                 <>
                   <FormField name="title" label="Title" required />
                   <FormField
+                    name="status"
+                    label="Status"
+                    render={({ field }) => (
+                      <Select
+                        value={String(field.value ?? 'published')}
+                        onValueChange={(value) =>
+                          field.onChange((value ?? 'published') as JournalPostStatus)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="published">Published</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  <FormField
                     name="content"
                     label="Content"
                     render={({ field }) => (
-                      <Textarea
-                        id="journal-content"
-                        value={String(field.value ?? '')}
-                        onChange={(value) => field.onChange(value)}
-                        onBlur={field.onBlur}
-                        rows={8}
-                      />
+                      <>
+                        <fieldset className="grid grid-flow-col auto-cols-max gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() =>
+                              applyMarkdown('**', '**', field.onChange, String(field.value ?? ''))
+                            }
+                          >
+                            Bold
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() =>
+                              applyMarkdown('*', '*', field.onChange, String(field.value ?? ''))
+                            }
+                          >
+                            Italic
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() =>
+                              applyMarkdown('\n## ', '\n', field.onChange, String(field.value ?? ''))
+                            }
+                          >
+                            Heading
+                          </Button>
+                        </fieldset>
+                        <Textarea
+                          id="journal-content"
+                          value={String(field.value ?? '')}
+                          onChange={(value) => field.onChange(value)}
+                          onBlur={field.onBlur}
+                          rows={8}
+                        />
+                      </>
                     )}
                   />
                   <Label>
@@ -125,7 +206,6 @@ export function JournalPostEditor({
                     >
                       Choose images
                     </Button>
-                    {/* File picker requires native change event with FileList; pace-core Input is string-only. */}
                     {/* eslint-disable-next-line pace-core-compliance/prefer-pace-core-components -- file input */}
                     <input
                       ref={fileInputRef}
@@ -143,7 +223,9 @@ export function JournalPostEditor({
                       ))}
                     </ul>
                   )}
-                  {uploadProgress != null && <Progress value={uploadProgress} />}
+                  {(uploadProgress != null || isSubmitting) && (
+                    <Progress value={uploadProgress ?? undefined} />
+                  )}
                   <DialogFooter>
                     <SaveActions
                       saveType="submit"
