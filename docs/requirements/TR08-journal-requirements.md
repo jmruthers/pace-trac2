@@ -81,11 +81,13 @@ Event **journal** at `/journal`: **posts** with optional **images**, backed by *
 
 ## Acceptance criteria
 
-1. Authorised user can create, edit, delete posts for the event.
-2. Images upload and display when tied to a post; deleting posts or images follows the documented secure storage cleanup rules and does not silently ignore storage failure.
-3. UI **never** lists images without post/event filter.
-4. Unauthorised users cannot read or write posts/images for the event.
-5. Behaviour matches RLS tests for `journal` page key.
+| # | Criterion | Status | Evidence |
+|---|-----------|--------|----------|
+| 1 | Authorised user can create, edit, delete posts for the event. | **Complete** | [`useJournalPosts.ts`](../../src/hooks/journal/useJournalPosts.ts) mutations; [`JournalPage.tsx`](../../src/app/pages/JournalPage.tsx) + [`JournalPostEditor.tsx`](../../src/components/journal/JournalPostEditor.tsx); actions gated by `useResourcePermissions('journal')`. |
+| 2 | Images upload and display when tied to a post; deleting posts or images follows the documented secure storage cleanup rules and does not silently ignore storage failure. | **Complete** (see remediation for progress UX) | [`journal-image-lifecycle.ts`](../../src/hooks/journal/journal-image-lifecycle.ts); signed URLs in [`JournalImageThumbnail.tsx`](../../src/components/journal/JournalImageThumbnail.tsx); storage failures surfaced via toast/Alert. |
+| 3 | UI **never** lists images without post/event filter. | **Complete** | Single query: `trac_journal_posts` `.eq('event_id', …)` with `trac_journal_images(*)` embed only. |
+| 4 | Unauthorised users cannot read or write posts/images for the event. | **Complete** (app); **manual** (dev-db RLS) | `PagePermissionGuard pageName="journal"`; shell `/journal` → `journal` read; writes enforced by RLS + permission-gated UI. |
+| 5 | Behaviour matches RLS tests for `journal` page key. | **Partial** | App uses `journal` page key throughout; no automated dev-db RLS test suite in repo — manual verification required (see [TR08-slice-completion.md](../delivery/TR08-slice-completion.md)). |
 
 ---
 
@@ -108,20 +110,22 @@ Event **journal** at `/journal`: **posts** with optional **images**, backed by *
 
 ## Verification
 
-- RLS: user without journal permission denied on dev-db.
-- Verify upload rollback path and delete failure path are surfaced correctly.
+| Item | Status |
+|------|--------|
+| RLS: user without journal permission denied on dev-db. | **Manual — pending sign-off** (app: `PagePermissionGuard` + shell; see [TR08-slice-completion.md](../delivery/TR08-slice-completion.md)) |
+| Upload rollback and delete failure paths surfaced correctly. | **Complete** (automated lifecycle tests + mutation toasts; UI integration for rollback in page tests) |
 
 ---
 
 ## Testing requirements
 
-| # | Scenario | Type |
-|---|----------|------|
-| 1 | **Happy path:** Create post with image; appears in event journal | Integration (mock storage or test bucket) |
-| 2 | **Validation failure:** Upload rejected or metadata/update step fails after upload — user-visible error and rollback/cleanup behaviour triggered | Integration |
-| 3 | **Auth / permission failure:** No journal read — no post content leakage | Integration |
+| # | Scenario | Type | Status |
+|---|----------|------|--------|
+| 1 | **Happy path:** Create post with image; appears in event journal | Integration (mock storage or test bucket) | **Partial** — UI integration asserts loaded feed + thumbnail; create-with-image covered in [`useJournalPosts.test.tsx`](../../src/hooks/journal/useJournalPosts.test.tsx) (see remediation). |
+| 2 | **Validation failure:** Upload rejected or metadata/update step fails after upload — user-visible error and rollback/cleanup behaviour triggered | Integration | **Complete** — [`journal-image-lifecycle.test.ts`](../../src/hooks/journal/journal-image-lifecycle.test.ts); lifecycle failure also exercised in [`JournalPage.integration.test.tsx`](../../src/app/pages/JournalPage.integration.test.tsx). |
+| 3 | **Auth / permission failure:** No journal read — no post content leakage | Integration | **Complete** — [`JournalPage.integration.test.tsx`](../../src/app/pages/JournalPage.integration.test.tsx). |
 
-Unit: storage path / key helpers, markdown sanitisation if applicable (pure).
+Unit: storage path / key helpers, markdown sanitisation if applicable (pure). **Complete** — [`journal-storage.test.ts`](../../src/utils/journal-storage.test.ts), [`journal-content.test.ts`](../../src/utils/journal-content.test.ts).
 
 ---
 
