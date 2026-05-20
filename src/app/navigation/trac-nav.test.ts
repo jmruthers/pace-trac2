@@ -24,7 +24,8 @@ describe('trac-nav', () => {
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/planning')).toBe(true);
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/contacts')).toBe(true);
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/journal')).toBe(true);
+    expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/risks')).toBe(true);
     const labels = getEnabledTracNavItems().map((item) => item.label);
-    expect(labels).toEqual(['Planning', 'Contacts', 'Journal']);
+    expect(labels).toEqual(['Planning', 'Contacts', 'Journal', 'Risks']);
   });
 });
