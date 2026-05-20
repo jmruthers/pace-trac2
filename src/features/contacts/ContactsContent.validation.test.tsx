@@ -11,6 +11,7 @@ vi.mock('@/features/contacts/hooks/use-contacts', () => ({
 
 let capturedOnCreateRow: ((row: Record<string, unknown>) => void | Promise<void>) | undefined;
 
+/* eslint-disable pace-core-compliance/prefer-pace-core-components -- DataTable test stub */
 vi.mock('@solvera/pace-core/components', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@solvera/pace-core/components')>();
   return {

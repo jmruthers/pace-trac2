@@ -20,11 +20,11 @@ describe('trac-nav', () => {
     ]);
   });
 
-  it('enables Planning and Contacts nav for registered routes', () => {
+  it('enables nav links only for registered route paths', () => {
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/planning')).toBe(true);
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/contacts')).toBe(true);
-    const items = getEnabledTracNavItems();
-    expect(items.map((item) => item.href)).toContain('/planning');
-    expect(items.map((item) => item.href)).toContain('/contacts');
+    expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/journal')).toBe(true);
+    const labels = getEnabledTracNavItems().map((item) => item.label);
+    expect(labels).toEqual(['Planning', 'Contacts', 'Journal']);
   });
 });

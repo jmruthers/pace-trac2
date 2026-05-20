@@ -21,7 +21,7 @@
 | SLICE-01 — Platform shell       | -                                                          | built  |                |
 | SLICE-03 — Planning (logistics) | SLICE-01                                                   | built  |                |
 | SLICE-06 — Contacts             | SLICE-01                                                   | built  |                |
-| SLICE-08 — Journal              | SLICE-01                                                   |        |                |
+| SLICE-08 — Journal              | SLICE-01                                                   | built  |                |
 | SLICE-04 — Assignments          | SLICE-01, SLICE-03                                         |        |                |
 | SLICE-05 — Itinerary            | SLICE-01, SLICE-03, SLICE-04                               |        |                |
 | SLICE-07 — Costs & currency     | SLICE-01, SLICE-03, SLICE-04                               |        |                |
@@ -70,7 +70,12 @@
 ### SLICE-08 — Journal
 
 - authority: `docs/requirements/TR08-journal-requirements.md`
+- completion: `docs/delivery/TR08-slice-completion.md`
 - backend freeze: Frozen for this run — see `docs/delivery/trac-backend-ready-report.md` (PASS)
+- validate: PASS (6/6 checks)
+- tests: 59+ passed (`journal-*`, `JournalPage.integration.test.tsx`, nav)
+- routes: `/journal` (post CRUD, images via `files` bucket, `journal` RBAC)
+- acceptance: AC1–AC5 complete (app); manual dev-db sign-off per TR08-slice-completion.md
 
 ### SLICE-04 — Assignments
 

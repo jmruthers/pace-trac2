@@ -23,6 +23,9 @@ export default defineConfig({
         'src/app/routes/**/*.ts',
         'src/features/contacts/**/*.{ts,tsx}',
         'src/features/planning/**/*.ts',
+        'src/hooks/journal/**/*.ts',
+        'src/components/journal/**/*.tsx',
+        'src/utils/journal-*.ts',
       ],
       exclude: [
         '**/*.test.ts',
@@ -39,6 +42,9 @@ export default defineConfig({
         'src/app-config.ts': { statements: 100, lines: 100 },
         'src/app/navigation/**/*.ts': { statements: 85, lines: 85 },
         'src/app/pages/**/*.tsx': { statements: 70, lines: 70 },
+        'src/hooks/journal/**/*.ts': { statements: 70, lines: 70 },
+        'src/components/journal/**/*.tsx': { statements: 70, lines: 70 },
+        'src/utils/journal-*.ts': { statements: 85, lines: 85 },
         'src/app/shell/**/*.tsx': { statements: 70, lines: 70 },
         'src/app/routes/**/*.ts': { statements: 85, lines: 85 },
         'src/features/contacts/**/*.{ts,tsx}': { statements: 70, lines: 70 },
@@ -48,6 +54,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      react: path.resolve(__dirname, 'node_modules/react'),
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
     },
     dedupe: ['react', 'react-dom', 'react-router-dom'],
   },
