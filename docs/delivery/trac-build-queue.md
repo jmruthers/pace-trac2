@@ -19,7 +19,7 @@
 | slice_id                        | depends_on                                                 | status | blocker_reason |
 | ------------------------------- | ---------------------------------------------------------- | ------ | -------------- |
 | SLICE-01 — Platform shell       | -                                                          | built  |                |
-| SLICE-03 — Planning (logistics) | SLICE-01                                                   |        |                |
+| SLICE-03 — Planning (logistics) | SLICE-01                                                   | built  |                |
 | SLICE-06 — Contacts             | SLICE-01                                                   |        |                |
 | SLICE-08 — Journal              | SLICE-01                                                   |        |                |
 | SLICE-04 — Assignments          | SLICE-01, SLICE-03                                         |        |                |
@@ -45,7 +45,11 @@
 ### SLICE-03 — Planning (logistics)
 
 - authority: `docs/requirements/TR03-planning-logistics-requirements.md`
+- completion: `docs/delivery/TR03-slice-completion.md`
 - backend freeze: Frozen for this run — see `docs/delivery/trac-backend-ready-report.md` (PASS)
+- validate: PASS (6/6 checks)
+- tests: 37 passed (includes planning unit/integration + PlanningPage)
+- routes: `/planning` (transport, accommodation, activity tabs)
 
 ### SLICE-06 — Contacts
 

@@ -26,6 +26,7 @@ import {
   resolveUserDashboardRedirectTarget,
 } from '@/app/routes/route-redirects';
 import { ShellHomePage } from '@/app/pages/ShellHomePage';
+import { PlanningPage } from '@/app/pages/PlanningPage';
 import { NotFoundPage } from '@/app/pages/NotFoundPage';
 import { TracNoEventFallback } from '@/app/shell/TracNoEventFallback';
 
@@ -158,6 +159,7 @@ export function AuthenticatedRoutes() {
           }
         >
           <Route index element={<ShellHomePage />} />
+          <Route path="planning" element={<PlanningPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>
