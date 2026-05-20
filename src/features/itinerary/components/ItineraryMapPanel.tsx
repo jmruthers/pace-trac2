@@ -7,23 +7,42 @@ interface ItineraryMapPanelProps {
   mapData: ItineraryMapData;
 }
 
+type LatLngLiteral = { lat: number; lng: number };
+
+type MapsMapOptions = {
+  mapTypeControl: boolean;
+  streetViewControl: boolean;
+  fullscreenControl: boolean;
+};
+
+type MapsMapInstance = {
+  fitBounds: (bounds: unknown) => void;
+};
+
+type MapsLatLngBounds = {
+  extend: (coords: LatLngLiteral) => void;
+};
+
+type MapsMarkerOptions = {
+  map: unknown;
+  position: LatLngLiteral;
+  title: string;
+};
+
+type MapsPolylineOptions = {
+  map: unknown;
+  path: LatLngLiteral[];
+};
+
+type GoogleMapsNamespace = {
+  Map: new (element: HTMLElement, options: MapsMapOptions) => MapsMapInstance;
+  LatLngBounds: new () => MapsLatLngBounds;
+  Marker: new (options: MapsMarkerOptions) => unknown;
+  Polyline: new (options: MapsPolylineOptions) => unknown;
+};
+
 type MapsApi = {
-  maps: {
-    Map: new (
-      element: HTMLElement,
-      options: { mapTypeControl: boolean; streetViewControl: boolean; fullscreenControl: boolean }
-    ) => { fitBounds: (bounds: unknown) => void };
-    LatLngBounds: new () => { extend: (coords: { lat: number; lng: number }) => void };
-    Marker: new (options: {
-      map: unknown;
-      position: { lat: number; lng: number };
-      title: string;
-    }) => unknown;
-    Polyline: new (options: {
-      map: unknown;
-      path: { lat: number; lng: number }[];
-    }) => unknown;
-  };
+  maps: GoogleMapsNamespace;
 };
 
 function getMapsApi(): MapsApi | null {

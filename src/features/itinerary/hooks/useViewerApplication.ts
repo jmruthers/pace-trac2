@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useUnifiedAuthContext } from '@solvera/pace-core';
 import { useSecureSupabase } from '@solvera/pace-core/rbac';
+import { err, isErr, ok, type ApiResult } from '@solvera/pace-core/types';
 import { itineraryQueryKeys } from '@/features/itinerary/query-keys';
 import { useItineraryScope } from '@/features/itinerary/hooks/useItineraryScope';
 import { asItineraryClient } from '@/features/itinerary/supabase-helpers';
@@ -18,13 +19,18 @@ async function resolveApplicantApplication(
   secureSupabase: NonNullable<ReturnType<typeof asItineraryClient>>,
   eventId: string,
   userId: string
-): Promise<ViewerApplication | null> {
+): Promise<ApiResult<ViewerApplication | null>> {
   const { data, error } = await secureSupabase
     .from('base_application')
     .select('id, event_id, status')
     .eq('event_id', eventId)
     .order('created_at', { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error != null) {
+    return err({
+      code: 'VIEWER_APPLICATION_LIST_FAILED',
+      message: error.message,
+    });
+  }
 
   const rows = (data ?? []).map(normalizeViewerApplication);
   for (const row of rows) {
@@ -37,11 +43,16 @@ async function resolveApplicantApplication(
         p_user_id: userId,
       }
     );
-    if (rpcError) throw new Error(rpcError.message);
-    if (isApplicant === true) return row;
+    if (rpcError != null) {
+      return err({
+        code: 'VIEWER_APPLICATION_APPLICANT_CHECK_FAILED',
+        message: rpcError.message,
+      });
+    }
+    if (isApplicant === true) return ok(row);
   }
 
-  return null;
+  return ok(null);
 }
 
 /** Event-scoped application for the signed-in viewer when they are the applicant (RLS + RPC). */
@@ -56,7 +67,11 @@ export function useViewerApplication() {
     enabled: Boolean(secureSupabase && isReady && eventId && userId),
     queryFn: async (): Promise<ViewerApplication | null> => {
       if (!secureSupabase || !eventId || !userId) return null;
-      return resolveApplicantApplication(secureSupabase, eventId, userId);
+      const result = await resolveApplicantApplication(secureSupabase, eventId, userId);
+      if (isErr(result)) {
+        throw new Error(result.error.message);
+      }
+      return result.data;
     },
     staleTime: 30_000,
   });
