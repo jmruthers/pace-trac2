@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
@@ -34,19 +34,38 @@ interface AccommodationDialogProps {
   mode: 'create' | 'edit';
 }
 
-const defaultValues: AccommodationFormValues = {
-  name: '',
-  check_in_time: new Date(),
-  check_out_time: new Date(Date.now() + 86400000),
-  location_label: '',
-  status: 'idea',
-  notes: '',
-  booking_reference: '',
-  currency: '',
-  individual_cost: null,
-  group_cost: null,
-  capacity: null,
-};
+function createAccommodationDefaultValues(): AccommodationFormValues {
+  const now = Date.now();
+  return {
+    name: '',
+    check_in_time: new Date(now),
+    check_out_time: new Date(now + 86_400_000),
+    location_label: '',
+    status: 'idea',
+    notes: '',
+    booking_reference: '',
+    currency: '',
+    individual_cost: null,
+    group_cost: null,
+    capacity: null,
+  };
+}
+
+function accommodationToFormValues(accommodation: AccommodationRow): AccommodationFormValues {
+  return {
+    name: accommodation.name,
+    check_in_time: new Date(accommodation.check_in_time),
+    check_out_time: new Date(accommodation.check_out_time),
+    location_label: accommodation.location_display_name ?? '',
+    status: accommodation.status ?? 'idea',
+    notes: accommodation.notes ?? '',
+    booking_reference: accommodation.booking_reference ?? '',
+    currency: accommodation.currency ?? '',
+    individual_cost: accommodation.individual_cost,
+    group_cost: accommodation.group_cost,
+    capacity: accommodation.capacity,
+  };
+}
 
 export function AccommodationDialog({
   open,
@@ -61,34 +80,33 @@ export function AccommodationDialog({
   const { can: canDelete } = usePageCan('planning', 'delete');
   const canSave = mode === 'create' ? canCreate : canUpdate;
 
-  const [location, setLocation] = useState<PlanningPlaceValue | null>(() =>
-    accommodation
-      ? rowToPlanningPlace(
+  const [sessionKey, setSessionKey] = useState(0);
+  const [formDefaults, setFormDefaults] = useState(createAccommodationDefaultValues);
+  const [location, setLocation] = useState<PlanningPlaceValue | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setSubmitError(null);
+    setSessionKey((key) => key + 1);
+    if (mode === 'create') {
+      setLocation(null);
+      setFormDefaults(createAccommodationDefaultValues());
+      return;
+    }
+    if (accommodation) {
+      setLocation(
+        rowToPlanningPlace(
           accommodation.location_place_id,
           accommodation.location_display_name,
           accommodation.location_short_address,
           accommodation.location_coords,
           accommodation.location_timezone
         )
-      : null
-  );
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const initialValues: AccommodationFormValues = accommodation
-    ? {
-        name: accommodation.name,
-        check_in_time: new Date(accommodation.check_in_time),
-        check_out_time: new Date(accommodation.check_out_time),
-        location_label: accommodation.location_display_name ?? '',
-        status: accommodation.status ?? 'idea',
-        notes: accommodation.notes ?? '',
-        booking_reference: accommodation.booking_reference ?? '',
-        currency: accommodation.currency ?? '',
-        individual_cost: accommodation.individual_cost,
-        group_cost: accommodation.group_cost,
-        capacity: accommodation.capacity,
-      }
-    : defaultValues;
+      );
+      setFormDefaults(accommodationToFormValues(accommodation));
+    }
+  }, [open, mode, accommodation]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -98,8 +116,9 @@ export function AccommodationDialog({
         </DialogHeader>
         <DialogBody>
           <Form
+            key={sessionKey}
             schema={accommodationFormSchema}
-            defaultValues={initialValues}
+            defaultValues={formDefaults}
             onSubmit={async (values) => {
               setSubmitError(null);
               if (!location?.displayName) {

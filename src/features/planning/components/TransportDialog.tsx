@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
@@ -40,21 +40,42 @@ interface TransportDialogProps {
   mode: 'create' | 'edit';
 }
 
-const defaultValues: TransportFormValues = {
-  mode: 'Flight',
-  transport_number: '',
-  departure_time: new Date(),
-  arrival_time: new Date(Date.now() + 3600000),
-  departure_label: '',
-  arrival_label: '',
-  status: 'idea',
-  notes: '',
-  booking_reference: '',
-  currency: '',
-  individual_cost: null,
-  group_cost: null,
-  capacity: null,
-};
+function createTransportDefaultValues(): TransportFormValues {
+  const now = Date.now();
+  return {
+    mode: 'Flight',
+    transport_number: '',
+    departure_time: new Date(now),
+    arrival_time: new Date(now + 3_600_000),
+    departure_label: '',
+    arrival_label: '',
+    status: 'idea',
+    notes: '',
+    booking_reference: '',
+    currency: '',
+    individual_cost: null,
+    group_cost: null,
+    capacity: null,
+  };
+}
+
+function transportToFormValues(transport: TransportRow): TransportFormValues {
+  return {
+    mode: transport.mode,
+    transport_number: transport.transport_number ?? '',
+    departure_time: new Date(transport.departure_time),
+    arrival_time: new Date(transport.arrival_time),
+    departure_label: transport.departure_display_name ?? '',
+    arrival_label: transport.arrival_display_name ?? '',
+    status: transport.status ?? 'idea',
+    notes: transport.notes ?? '',
+    booking_reference: transport.booking_reference ?? '',
+    currency: transport.currency ?? '',
+    individual_cost: transport.individual_cost,
+    group_cost: transport.group_cost,
+    capacity: transport.capacity,
+  };
+}
 
 export function TransportDialog({
   open,
@@ -69,47 +90,44 @@ export function TransportDialog({
   const { can: canDelete } = usePageCan('planning', 'delete');
   const canSave = mode === 'create' ? canCreate : canUpdate;
 
-  const [departure, setDeparture] = useState<PlanningPlaceValue | null>(() =>
-    transport
-      ? rowToPlanningPlace(
+  const [sessionKey, setSessionKey] = useState(0);
+  const [formDefaults, setFormDefaults] = useState(createTransportDefaultValues);
+  const [departure, setDeparture] = useState<PlanningPlaceValue | null>(null);
+  const [arrival, setArrival] = useState<PlanningPlaceValue | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setSubmitError(null);
+    setSessionKey((key) => key + 1);
+    if (mode === 'create') {
+      setDeparture(null);
+      setArrival(null);
+      setFormDefaults(createTransportDefaultValues());
+      return;
+    }
+    if (transport) {
+      setDeparture(
+        rowToPlanningPlace(
           transport.departure_place_id,
           transport.departure_display_name,
           transport.departure_short_address,
           transport.departure_coords,
           transport.departure_timezone
         )
-      : null
-  );
-  const [arrival, setArrival] = useState<PlanningPlaceValue | null>(() =>
-    transport
-      ? rowToPlanningPlace(
+      );
+      setArrival(
+        rowToPlanningPlace(
           transport.arrival_place_id,
           transport.arrival_display_name,
           transport.arrival_short_address,
           transport.arrival_coords,
           transport.arrival_timezone
         )
-      : null
-  );
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const initialValues: TransportFormValues = transport
-    ? {
-        mode: transport.mode,
-        transport_number: transport.transport_number ?? '',
-        departure_time: new Date(transport.departure_time),
-        arrival_time: new Date(transport.arrival_time),
-        departure_label: transport.departure_display_name ?? '',
-        arrival_label: transport.arrival_display_name ?? '',
-        status: transport.status ?? 'idea',
-        notes: transport.notes ?? '',
-        booking_reference: transport.booking_reference ?? '',
-        currency: transport.currency ?? '',
-        individual_cost: transport.individual_cost,
-        group_cost: transport.group_cost,
-        capacity: transport.capacity,
-      }
-    : defaultValues;
+      );
+      setFormDefaults(transportToFormValues(transport));
+    }
+  }, [open, mode, transport]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -119,8 +137,9 @@ export function TransportDialog({
         </DialogHeader>
         <DialogBody>
           <Form
+            key={sessionKey}
             schema={transportFormSchema}
-            defaultValues={initialValues}
+            defaultValues={formDefaults}
             onSubmit={async (values) => {
               setSubmitError(null);
               if (!departure?.displayName || !arrival?.displayName) {

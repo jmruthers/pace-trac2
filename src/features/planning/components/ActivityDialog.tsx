@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
@@ -31,20 +31,40 @@ interface ActivityDialogProps {
   mode: 'create' | 'edit';
 }
 
-const defaultValues: ActivityFormValues = {
-  name: '',
-  start_time: new Date(),
-  finish_time: new Date(Date.now() + 3600000),
-  start_location_label: '',
-  finish_location_label: '',
-  status: 'idea',
-  notes: '',
-  booking_reference: '',
-  currency: '',
-  individual_cost: null,
-  group_cost: null,
-  capacity: null,
-};
+function createActivityDefaultValues(): ActivityFormValues {
+  const now = Date.now();
+  return {
+    name: '',
+    start_time: new Date(now),
+    finish_time: new Date(now + 3_600_000),
+    start_location_label: '',
+    finish_location_label: '',
+    status: 'idea',
+    notes: '',
+    booking_reference: '',
+    currency: '',
+    individual_cost: null,
+    group_cost: null,
+    capacity: null,
+  };
+}
+
+function activityToFormValues(activity: ActivityRow): ActivityFormValues {
+  return {
+    name: activity.name,
+    start_time: new Date(activity.start_time),
+    finish_time: new Date(activity.finish_time),
+    start_location_label: activity.start_location_display_name ?? '',
+    finish_location_label: activity.finish_location_display_name ?? '',
+    status: activity.status ?? 'idea',
+    notes: activity.notes ?? '',
+    booking_reference: activity.booking_reference ?? '',
+    currency: activity.currency ?? '',
+    individual_cost: activity.individual_cost,
+    group_cost: activity.group_cost,
+    capacity: activity.capacity,
+  };
+}
 
 export function ActivityDialog({
   open,
@@ -59,46 +79,44 @@ export function ActivityDialog({
   const { can: canDelete } = usePageCan('planning', 'delete');
   const canSave = mode === 'create' ? canCreate : canUpdate;
 
-  const [startLocation, setStartLocation] = useState<PlanningPlaceValue | null>(() =>
-    activity
-      ? rowToPlanningPlace(
+  const [sessionKey, setSessionKey] = useState(0);
+  const [formDefaults, setFormDefaults] = useState(createActivityDefaultValues);
+  const [startLocation, setStartLocation] = useState<PlanningPlaceValue | null>(null);
+  const [finishLocation, setFinishLocation] = useState<PlanningPlaceValue | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setSubmitError(null);
+    setSessionKey((key) => key + 1);
+    if (mode === 'create') {
+      setStartLocation(null);
+      setFinishLocation(null);
+      setFormDefaults(createActivityDefaultValues());
+      return;
+    }
+    if (activity) {
+      setStartLocation(
+        rowToPlanningPlace(
           activity.start_location_place_id,
           activity.start_location_display_name,
           activity.start_location_short_address,
           activity.start_location_coords,
           activity.start_location_timezone
         )
-      : null
-  );
-  const [finishLocation, setFinishLocation] = useState<PlanningPlaceValue | null>(() =>
-    activity
-      ? rowToPlanningPlace(
+      );
+      setFinishLocation(
+        rowToPlanningPlace(
           activity.finish_location_place_id,
           activity.finish_location_display_name,
           activity.finish_location_short_address,
           activity.finish_location_coords,
           activity.finish_location_timezone
         )
-      : null
-  );
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const initialValues: ActivityFormValues = activity
-    ? {
-        name: activity.name,
-        start_time: new Date(activity.start_time),
-        finish_time: new Date(activity.finish_time),
-        start_location_label: activity.start_location_display_name ?? '',
-        finish_location_label: activity.finish_location_display_name ?? '',
-        status: activity.status ?? 'idea',
-        notes: activity.notes ?? '',
-        booking_reference: activity.booking_reference ?? '',
-        currency: activity.currency ?? '',
-        individual_cost: activity.individual_cost,
-        group_cost: activity.group_cost,
-        capacity: activity.capacity,
-      }
-    : defaultValues;
+      );
+      setFormDefaults(activityToFormValues(activity));
+    }
+  }, [open, mode, activity]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -108,8 +126,9 @@ export function ActivityDialog({
         </DialogHeader>
         <DialogBody>
           <Form
+            key={sessionKey}
             schema={activityFormSchema}
-            defaultValues={initialValues}
+            defaultValues={formDefaults}
             onSubmit={async (values) => {
               setSubmitError(null);
               if (!startLocation?.displayName || !finishLocation?.displayName) {
