@@ -31,6 +31,7 @@ import { JournalPage } from '@/app/pages/JournalPage';
 import { AssignmentsPage } from '@/app/pages/AssignmentsPage';
 import { PlanningPage } from '@/app/pages/PlanningPage';
 import { RisksPage } from '@/app/pages/RisksPage';
+import { ItineraryPage } from '@/app/pages/ItineraryPage';
 import { NotFoundPage } from '@/app/pages/NotFoundPage';
 import { TracNoEventFallback } from '@/app/shell/TracNoEventFallback';
 
@@ -165,6 +166,7 @@ export function AuthenticatedRoutes() {
           <Route index element={<ShellHomePage />} />
           <Route path="planning" element={<PlanningPage />} />
           <Route path="assignments" element={<AssignmentsPage />} />
+          <Route path="itinerary" element={<ItineraryPage />} />
           <Route path="contacts" element={<ContactsPage />} />
           <Route path="journal" element={<JournalPage />} />
           <Route path="risks" element={<RisksPage />} />

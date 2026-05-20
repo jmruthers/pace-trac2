@@ -34,6 +34,10 @@ describe('trac-route-permissions', () => {
       pageName: 'risks',
       operation: 'read',
     });
+    expect(getTracRoutePermissionForPath('/itinerary')).toEqual({
+      pageName: 'itinerary',
+      operation: 'read',
+    });
     expect(getTracRoutePermissionForPath('/')).toBeUndefined();
   });
 
