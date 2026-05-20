@@ -20,8 +20,9 @@ describe('trac-nav', () => {
     ]);
   });
 
-  it('SLICE-01 exposes no nav links until domain routes register', () => {
-    expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/planning')).toBe(false);
-    expect(getEnabledTracNavItems()).toEqual([]);
+  it('SLICE-03 enables Planning nav when /planning is registered', () => {
+    expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/planning')).toBe(true);
+    const items = getEnabledTracNavItems();
+    expect(items.map((item) => item.href)).toContain('/planning');
   });
 });

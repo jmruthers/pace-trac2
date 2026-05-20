@@ -21,6 +21,7 @@ export default defineConfig({
         'src/app/pages/**/*.tsx',
         'src/app/shell/**/*.tsx',
         'src/app/routes/**/*.ts',
+        'src/features/planning/**/*.ts',
       ],
       exclude: [
         '**/*.test.ts',
