@@ -25,7 +25,7 @@ import {
   LEGACY_USER_DASHBOARD_PATH,
   resolveUserDashboardRedirectTarget,
 } from '@/app/routes/route-redirects';
-import { ShellHomePage } from '@/app/pages/ShellHomePage';
+import { DashboardPage } from '@/app/pages/DashboardPage';
 import { ContactsPage } from '@/app/pages/ContactsPage';
 import { JournalPage } from '@/app/pages/JournalPage';
 import { AssignmentsPage } from '@/app/pages/AssignmentsPage';
@@ -166,7 +166,8 @@ export function AuthenticatedRoutes() {
             />
           }
         >
-          <Route index element={<ShellHomePage />} />
+          <Route index element={<DashboardPage />} />
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="planning" element={<PlanningPage />} />
           <Route path="assignments" element={<AssignmentsPage />} />
           <Route path="itinerary" element={<ItineraryPage />} />

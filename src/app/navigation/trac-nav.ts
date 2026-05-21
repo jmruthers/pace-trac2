@@ -7,6 +7,7 @@ export { TRAC_PRIMARY_NAV_DEFINITIONS } from '@/app/navigation/trac-nav-definiti
 /** Route paths registered in the current app build (expand as feature slices land). */
 export const TRAC_REGISTERED_ROUTE_PATHS = new Set<string>([
   '/',
+  '/dashboard',
   '/planning',
   '/assignments',
   '/itinerary',

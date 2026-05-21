@@ -16,9 +16,9 @@
 | 2 | Currency display uses **event base currency** metadata | [x] | [x] unit | [ ] manual dev-db |
 | 3 | `/currency-rates` secured via page-guard + secure client; rate edits validated; `/costs` read/aggregate | [x] | [x] | [ ] manual RLS |
 | 4 | Per-participant R2 + row totals; NULL/zero/`assigned_count=0` handling | [x] | [x] unit | [x] UI + unit |
-| 5 | Exported/shared rollup for SLICE-02 and SLICE-10 (no copy-paste) | [x] | [x] consumer smoke | [x] export; SLICE-10 consumes `useCostRollupData`; SLICE-02 pending |
+| 5 | Exported/shared rollup for SLICE-02 and SLICE-10 (no copy-paste) | [x] | [x] consumer smoke | [x] export; SLICE-02 and SLICE-10 consume `useCostRollupData` |
 
-**Summary:** All five acceptance criteria are **implemented in application code**. AC1–3 **sign-off** depends on manual dev-db verification (P0 in remediation plan). AC5 consumption by Dashboard/Master Plan is **deferred to SLICE-02/10** (export contract satisfied for TR07).
+**Summary:** All five acceptance criteria are **implemented in application code**. AC1–3 **sign-off** depends on manual dev-db verification (P0 in remediation plan). AC5 consumption by SLICE-02 (dashboard) and SLICE-10 (master plan) is **complete in code**.
 
 ---
 
@@ -94,7 +94,7 @@
 | Check | Status |
 |-------|--------|
 | Cross-check totals vs SQL on dev-db | [ ] P0 — see [TR07-remediation-plan.md](./TR07-remediation-plan.md) |
-| Dashboard/Master Plan consume same helper | [x] Master Plan — `useCostRollupData`; [ ] SLICE-02 dashboard pending |
+| Dashboard/Master Plan consume same helper | [x] SLICE-02 — [`CostsSummaryCard`](../../src/features/dashboard/components/CostsSummaryCard.tsx); [x] SLICE-10 — `useCostRollupData` on `/masterplan` |
 
 ---
 
@@ -107,7 +107,7 @@
 | F-07-03 | [x] | R2 in `cost-rollup.ts` + participant table |
 | F-07-04 | [x] | NULL/zero/`assigned_count=0` tests |
 | F-07-05 | [x] | `formatCostAmount` + base currency RPC |
-| F-07-06 | [x] export / [x] SLICE-10 consume | [`useCostRollupData`](../../src/features/costs/hooks/useCostRollupData.ts) on `/masterplan`; SLICE-02 pending |
+| F-07-06 | [x] export / [x] consume | [`index.ts`](../../src/features/costs/index.ts); SLICE-02 [`CostsSummaryCard`](../../src/features/dashboard/components/CostsSummaryCard.tsx); SLICE-10 `useCostRollupData` on `/masterplan` |
 | F-07-07 | [x] | No MINT integration |
 | F-07-08 | [x] | Line-level round-then-sum tests |
 

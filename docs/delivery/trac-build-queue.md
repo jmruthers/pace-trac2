@@ -26,7 +26,7 @@
 | SLICE-05 — Itinerary            | SLICE-01, SLICE-03, SLICE-04                               | built  |                |
 | SLICE-07 — Costs & currency     | SLICE-01, SLICE-03, SLICE-04                               | built  |                |
 | SLICE-09 — Risks                | SLICE-01, SLICE-06                                         | built  |                |
-| SLICE-02 — Dashboard            | SLICE-01, SLICE-03, SLICE-04, SLICE-05, SLICE-06, SLICE-07 |        |                |
+| SLICE-02 — Dashboard            | SLICE-01, SLICE-03, SLICE-04, SLICE-05, SLICE-06, SLICE-07 | built  |                |
 | SLICE-10 — Master Plan          | SLICE-01, SLICE-03, SLICE-04, SLICE-05, SLICE-06, SLICE-07 | built  |                |
 
 
@@ -142,8 +142,18 @@
 ### SLICE-02 — Dashboard
 
 - authority: `docs/requirements/TR02-dashboard-requirements.md`
+- completion: `docs/delivery/TR02-slice-completion.md`
+- remediation: `docs/delivery/TR02-remediation-plan.md` (P0 manual open)
 - backend freeze: Frozen for this run — see `docs/delivery/trac-backend-ready-report.md` (PASS)
-- composite upstream: `docs/requirements/trac-architecture.md` §Composite contracts — Dashboard (planning, itinerary, costs, contacts; lightweight `/assignments` link)
+- validate: PASS (6/6 checks)
+- tests: dashboard unit + integration (`planning-status-summary`, `format-itinerary-range`, `dashboard.integration.test.tsx`, `DashboardPage.test.tsx`; per-card failure AC7)
+- routes: `/`, `/dashboard` — `DashboardPage`; `read:page.dashboard`; replaces `ShellHomePage`
+- composite upstream: planning lists, itinerary model, `useCostRollupData`, contacts count; independent card errors
+- acceptance criteria (TR02 §1–7): **implemented in code** — AC2,4,5,6,7 signed off; AC1,3 pending P0 manual dev-db
+- testing (TR02 table): scenarios 1–3 **complete**; unit helpers **complete**; AC7 per-card failure **complete**
+- rebuild target: **complete in code** (composite cards, header, partial failure, SLICE-07 rollup consumer)
+- explicit exclusions: no hard-coded currency; no duplicate rollup; no dashboard nav item; no writes
+- follow-up: P0 manual dev-db spot-check + live permission denial (TR02 §Verification)
 
 ### SLICE-10 — Master Plan
 
@@ -157,5 +167,5 @@
 - composite upstream: `docs/requirements/trac-architecture.md` §Composite contracts — Master Plan (header, map, contacts, costs, itinerary)
 - acceptance criteria (TR10 §1–7): **implemented in code** — see completion record; **sign-off pending** P0 manual (print, dev-db RBAC, cost parity vs `/costs`)
 - shared rollup: `useCostRollupData` from SLICE-07 (no duplicate rollup logic)
-- follow-up: P0 manual checklist in TR10-slice-completion.md; SLICE-02 dashboard still queued
+- follow-up: P0 manual checklist in TR10-slice-completion.md
 
