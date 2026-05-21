@@ -14,9 +14,17 @@ export function formatEntryKind(kind: ItineraryEntryKind): string {
   return ENTRY_KIND_LABELS[kind] ?? kind;
 }
 
-export function formatOrderingTime(iso: string | null): string {
+export function formatOrderingTime(iso: string | null, timeZone?: string): string {
   if (iso == null) return '';
-  return new Date(iso).toLocaleString();
+  const instant = new Date(iso);
+  if (timeZone != null && timeZone.length > 0) {
+    return new Intl.DateTimeFormat(undefined, {
+      timeZone,
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(instant);
+  }
+  return instant.toLocaleString();
 }
 
 /** Local calendar day key (YYYY-MM-DD) for an instant in a timezone. */

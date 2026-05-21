@@ -28,7 +28,7 @@ export function ItineraryEntryRow({
 }: ItineraryEntryRowProps) {
   const typeLabel = RESOURCE_TYPE_LABELS[entry.resourceType];
   const headingPrefix = participantView ? 'Your ' : '';
-  const timeLabel = formatOrderingTime(entry.orderingTimestamp);
+  const timeLabel = formatOrderingTime(entry.orderingTimestamp, entry.timezone);
 
   const sameDayStay =
     display.resourceType === 'accommodation' &&
@@ -38,7 +38,7 @@ export function ItineraryEntryRow({
 
   const scheduleLine =
     sameDayStay && entry.entryKind === 'check-in'
-      ? `Check-in — ${formatOrderingTime(display.checkInTime ?? null)} · Check-out — ${formatOrderingTime(display.checkOutTime ?? null)}${entry.timezone ? ` (${entry.timezone})` : ''}`
+      ? `Check-in — ${formatOrderingTime(display.checkInTime ?? null, entry.timezone)} · Check-out — ${formatOrderingTime(display.checkOutTime ?? null, entry.timezone)}${entry.timezone ? ` (${entry.timezone})` : ''}`
       : `${formatEntryKind(entry.entryKind)}${timeLabel ? ` — ${timeLabel}` : ''}${entry.timezone ? ` (${entry.timezone})` : ''}`;
 
   return (
