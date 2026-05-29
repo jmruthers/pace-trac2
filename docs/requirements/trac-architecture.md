@@ -112,21 +112,35 @@ Slice requirements should spell out **empty, loading, and permission-denied** st
 
 **Status:** Frozen for slice requirements unless this section is updated.
 
-| Route | Purpose | Owning slice |
-|-------|---------|--------------|
-| `/login` | Sign-in | SLICE-01 |
-| `/user-dashboard` | Redirect to `/` (**TRAC** authenticated home) | SLICE-01 |
-| `/`, `/dashboard` | Dashboard (home alias) | SLICE-02 |
-| `/planning` | Logistics only (resources, capacity, status, location snapshots) | SLICE-03 |
-| `/assignments` | Per-person assignments (`trac_itinerary_assignment`), headcounts, notes | SLICE-04 |
-| `/itinerary` | Schedule / map / person-aware views | SLICE-05 |
-| `/contacts` | Event contacts | SLICE-06 |
-| `/costs` | Costs totals, conversion display, participant rollups | SLICE-07 |
-| `/currency-rates` | Currency rate management (RBAC-controlled) | SLICE-07 |
-| `/journal` | Event journal | SLICE-08 |
-| `/risks` | Risk register | SLICE-09 |
-| `/masterplan` | Printable-style operational summary | SLICE-10 |
-| `*` | NotFound (within authenticated shell) | SLICE-01 |
+### Page key naming (RBAC)
+
+TRAC v1 page keys are **lowercase kebab-case** slugs identical to `rbac_app_pages.page_name`, RLS `{operation}:page.{slug}` literals, and consuming app `pageName` / `useResourcePermissions` arguments. See pace-core **Standard 3 — Page key naming** and the platform [RBAC page name rollout checklist](../../pace-core2/docs/database/decisions/RBAC-page-name-rollout-checklist.md).
+
+**Canonical catalogue (9 keys):** `contacts`, `costs`, `currency-rates`, `dashboard`, `itinerary`, `journal`, `masterplan`, `planning`, `risks`.
+
+**Intentional v1 choices:**
+
+- **`/assignments`** shares **`planning`** (no dedicated `assignments` page key).
+- **`masterplan`** is one word (kebab-valid); route is **`/masterplan`**, not `/master-plan`.
+- **`/`, `/dashboard`:** shell path map does not resolve these; access is enforced by **`PagePermissionGuard`** on `DashboardPage` only.
+
+App source of truth for route → `pageName`: `src/app/navigation/trac-nav-definitions.ts` and `src/app/navigation/trac-route-permissions.ts`.
+
+| Route | RBAC `pageName` | Purpose | Owning slice |
+|-------|-----------------|---------|--------------|
+| `/login` | — | Sign-in | SLICE-01 |
+| `/user-dashboard` | — | Redirect to `/` (**TRAC** authenticated home) | SLICE-01 |
+| `/`, `/dashboard` | `dashboard` | Dashboard (home alias) | SLICE-02 |
+| `/planning` | `planning` | Logistics only (resources, capacity, status, location snapshots) | SLICE-03 |
+| `/assignments` | `planning` | Per-person assignments (`trac_itinerary_assignment`), headcounts, notes | SLICE-04 |
+| `/itinerary` | `itinerary` | Schedule / map / person-aware views | SLICE-05 |
+| `/contacts` | `contacts` | Event contacts | SLICE-06 |
+| `/costs` | `costs` | Costs totals, conversion display, participant rollups | SLICE-07 |
+| `/currency-rates` | `currency-rates` | Currency rate management (RBAC-controlled) | SLICE-07 |
+| `/journal` | `journal` | Event journal | SLICE-08 |
+| `/risks` | `risks` | Risk register | SLICE-09 |
+| `/masterplan` | `masterplan` | Printable-style operational summary | SLICE-10 |
+| `*` | — | NotFound (within authenticated shell) | SLICE-01 |
 
 **Primary navigation (order):** Planning → **Assignments** → Itinerary → Contacts → Costs → Journal → Master Plan → Risks. **Dashboard is not a primary nav item** — users reach it via **`/`** (and `/dashboard` alias). `/currency-rates` is a dedicated RBAC-controlled management page and is not required as a primary nav item in v1. Legacy had no `/assignments` URL; this is a **rebuild addition** to split slice scope.
 

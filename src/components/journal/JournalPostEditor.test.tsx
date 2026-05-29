@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { setupUser } from '@test-utils';
 import { JournalPostEditor } from '@/components/journal/JournalPostEditor';
 import { StubForm, StubInput, StubLabel } from '@/test/stub-elements';
 
@@ -78,7 +78,7 @@ describe('JournalPostEditor', () => {
 
   it('submits save with form values', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
-    const user = userEvent.setup();
+    const user = setupUser();
     render(<JournalPostEditor open onOpenChange={vi.fn()} onSave={onSave} />);
     await user.click(screen.getByRole('button', { name: /^save$/i }));
     expect(onSave).toHaveBeenCalledWith({

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { setupUser } from '@test-utils';
 import { RisksContent } from '@/features/risks/RisksContent';
 import type { Risk, RiskFormData } from '@/features/risks/types';
 
@@ -153,7 +153,7 @@ describe('RisksContent', () => {
   });
 
   it('print action calls window.print without throwing', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
 
     render(<RisksContent />);
@@ -173,7 +173,7 @@ describe('RisksContent', () => {
   });
 
   it('onSave resolves when mutation succeeds even if refreshRisks would fail', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const addRisk = vi.fn().mockResolvedValue(sampleRisk);
     const refreshRisks = vi.fn().mockRejectedValue(new Error('Refetch failed'));
     mockUseRisks.mockReturnValue({
@@ -199,7 +199,7 @@ describe('RisksContent', () => {
   });
 
   it('onDelete resolves when deleteRisk succeeds even if refreshRisks would fail', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const deleteRisk = vi.fn().mockResolvedValue(undefined);
     const refreshRisks = vi.fn().mockRejectedValue(new Error('Refetch failed'));
     mockUseRisks.mockReturnValue({
@@ -224,7 +224,7 @@ describe('RisksContent', () => {
   });
 
   it('handleDeleteRow resolves when deleteRisk succeeds even if refreshRisks would fail', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const deleteRisk = vi.fn().mockResolvedValue(undefined);
     const refreshRisks = vi.fn().mockRejectedValue(new Error('Refetch failed'));
     mockUseRisks.mockReturnValue({

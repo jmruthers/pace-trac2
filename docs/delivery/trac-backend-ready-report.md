@@ -284,3 +284,15 @@ Optional: MCP `get_advisors` for security regressions outside this PASS gate.
 - **Basis:** MCP verification on `yihzsfcceciimdoiibif` — TR01–TR10 schema, RLS, triggers, RBAC catalogue, DB-421/422/423 deltas, and platform RPC/Edge dependencies match requirement authority with **zero** in-scope DDL/RPC/RLS gaps.
 - **Frontend queue execution:** **GO**
 - **Run freeze:** **Backend frozen for this run** for slices **TR01–TR10** — no incremental backend asks without a new Phase 1 run per PDLC.
+
+### RBAC page name rollout sign-off (2026-05-29)
+
+Per [RBAC page name rollout checklist](../../pace-core2/docs/database/decisions/RBAC-page-name-rollout-checklist.md):
+
+| Check | Result |
+| --- | --- |
+| Global `rbac_app_pages` has no uppercase or underscore keys | **PASS** — `COUNT(*) = 0` on `yihzsfcceciimdoiibif` |
+| TRAC catalogue (9 kebab-case keys) | **PASS** — `contacts`, `costs`, `currency-rates`, `dashboard`, `itinerary`, `journal`, `masterplan`, `planning`, `risks` |
+| App route → `pageName` parity | **PASS** — matches [`trac-architecture.md`](../requirements/trac-architecture.md) §Information architecture (v1) and `src/app/navigation/trac-route-permissions.ts` |
+
+TRAC was listed as **existing kebab pages** in the platform rollout; no TRAC-specific rename migration was required. Client guards and hooks already use the canonical slugs.

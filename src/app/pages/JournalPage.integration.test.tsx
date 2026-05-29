@@ -4,7 +4,7 @@
 import { useState, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, cleanup, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { setupUser } from '@test-utils';
 import type { JournalPostSaveValues } from '@/components/journal/JournalPostEditor';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -284,7 +284,7 @@ describe('JournalPage integration', () => {
   });
 
   it('creates a post with an image through the editor and shows it in the feed', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderJournalPage();
 
     await waitFor(() => {
@@ -314,7 +314,7 @@ describe('JournalPage integration', () => {
   });
 
   it('shows a destructive toast when image upload fails during create', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const client = buildSupabaseMock({ uploadFails: true });
     mockUseSecureSupabase.mockReturnValue(client);
     mockUseStorageCapableClient.mockReturnValue(client);

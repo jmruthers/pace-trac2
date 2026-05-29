@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { setupUser } from '@test-utils';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { APP_NAME } from '@/app-config';
 import { TRAC_AUTHENTICATED_HOME_PATH } from '@/app/routes/route-redirects';
@@ -142,7 +142,7 @@ describe('auth-flow integration', () => {
   afterEach(cleanup);
 
   it('happy path: successful sign-in navigates to authenticated home', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     mockSignIn.mockResolvedValue({});
 
     renderLogin();
@@ -157,7 +157,7 @@ describe('auth-flow integration', () => {
   });
 
   it('validation failure: invalid credentials show error without navigation', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     mockSignIn.mockResolvedValue({ error: { message: 'Invalid login credentials' } });
 
     renderLogin();
@@ -176,7 +176,7 @@ describe('auth-flow integration', () => {
   });
 
   it('app-access failure: requireAppAccess denial shows alert and does not navigate', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     mockSignIn.mockResolvedValue({});
     const checkAppAccess = vi.fn().mockResolvedValue({
       allowed: false,
@@ -194,7 +194,7 @@ describe('auth-flow integration', () => {
   });
 
   it('shows checking permissions while app access is validated', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     mockSignIn.mockResolvedValue({});
     let resolveAccess: ((value: { allowed: boolean }) => void) | undefined;
     const checkAppAccess = vi.fn().mockImplementation(
@@ -217,7 +217,7 @@ describe('auth-flow integration', () => {
   });
 
   it('disables submit while sign-in is in flight', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     let resolveSignIn: (value: Record<string, never>) => void = () => {};
     mockSignIn.mockImplementation(
       () =>

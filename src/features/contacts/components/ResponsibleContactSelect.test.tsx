@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { setupUser } from '@test-utils';
 import { ResponsibleContactSelect } from '@/features/contacts/components/ResponsibleContactSelect';
 import type { Contact } from '@/features/contacts/types';
 
@@ -36,7 +36,7 @@ describe('ResponsibleContactSelect (SLICE-09 contract)', () => {
   });
 
   it('lists contacts from picker hook for responsible_contact_id selection', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onValueChange = vi.fn();
 
     render(<ResponsibleContactSelect value={null} onValueChange={onValueChange} />);

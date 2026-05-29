@@ -23,6 +23,8 @@
 
 ## 2. RBAC, permissions & page keys (cross-cutting)
 
+**Page key norm:** Every TRAC `pageName`, `useResourcePermissions` argument, DataTable `rbac.pageName`, and permission string slug after `page.` MUST be **lowercase kebab-case** and MUST match `rbac_app_pages.page_name` exactly (pace-core Standard 3 — Page key naming; platform RBAC page name rollout checklist). TRAC v1 catalogue: `contacts`, `costs`, `currency-rates`, `dashboard`, `itinerary`, `journal`, `masterplan`, `planning`, `risks`.
+
 | ID | Feature (atomic, testable) | Sources |
 |----|----------------------------|---------|
 | F-RBAC-01 | `/planning` and `/assignments` use **`planning`** page permissions for v1 (no dedicated `assignments` page key required for v1). | architecture §Planning stage resolutions; SLICE-04 §Orchestration; architecture §Contracts |

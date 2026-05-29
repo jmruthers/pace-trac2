@@ -1,16 +1,19 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { domInclude, resolveAlias, sharedTestOptions } from './vitest.shared.js';
+
+const domEnvironmentGlobs = domInclude.map((pattern) => [pattern, 'happy-dom'] as [string, string]);
 
 export default defineConfig({
   plugins: [react()],
   test: {
-    pool: 'threads',
+    ...sharedTestOptions,
     testTimeout: 10000,
     hookTimeout: 10000,
     teardownTimeout: 5000,
-    environment: 'happy-dom',
-    globals: false,
+    environment: 'node',
+    environmentMatchGlobs: domEnvironmentGlobs,
     setupFiles: ['./src/test-setup.ts'],
     coverage: {
       provider: 'v8',
@@ -53,7 +56,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      ...resolveAlias,
       react: path.resolve(__dirname, 'node_modules/react'),
       'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
     },

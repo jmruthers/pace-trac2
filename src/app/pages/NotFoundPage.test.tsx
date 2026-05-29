@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { setupUser } from '@test-utils';
 import { MemoryRouter } from 'react-router-dom';
 import { NotFoundPage } from '@/app/pages/NotFoundPage';
 
@@ -18,7 +18,7 @@ describe('NotFoundPage', () => {
   afterEach(cleanup);
 
   it('renders not found message and navigates home on action', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     render(
       <MemoryRouter>
         <NotFoundPage />
