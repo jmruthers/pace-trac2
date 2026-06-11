@@ -1,5 +1,6 @@
 import { LoadingSpinner } from '@solvera/pace-core/components';
 import { AccessDenied, PagePermissionGuard } from '@solvera/pace-core/rbac';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { MasterPlanContent } from '@/features/master-plan/MasterPlanContent';
 import { GoogleMapsPlanningProvider } from '@/features/planning/context/GoogleMapsPlanningContext';
 
@@ -7,7 +8,7 @@ import { GoogleMapsPlanningProvider } from '@/features/planning/context/GoogleMa
 export function MasterPlanPage() {
   return (
     <PagePermissionGuard
-      pageName="masterplan"
+      pageName={TRAC_PAGE_NAMES.masterplan}
       operation="read"
       loading={
         <main className="grid min-h-[50vh] place-items-center px-4" aria-busy="true">

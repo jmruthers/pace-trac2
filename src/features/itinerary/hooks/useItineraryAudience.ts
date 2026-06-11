@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import { usePageCan } from '@solvera/pace-core/rbac';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { useViewerApplication } from '@/features/itinerary/hooks/useViewerApplication';
 import type { ItineraryAudienceMode } from '@/features/itinerary/types';
 
 export function useItineraryAudience() {
   const { can: canReadPlanning, isLoading: planningPermissionLoading } = usePageCan(
-    'planning',
-    'read'
+    TRAC_PAGE_NAMES.planning,
+    'read',
   );
   const {
     application,

@@ -1,5 +1,6 @@
 import type { NavigationItem } from '@solvera/pace-core/components';
 import { TRAC_PRIMARY_NAV_DEFINITIONS } from '@/app/navigation/trac-nav-definitions';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 
 export type TracRoutePermissionOperation = 'read';
 
@@ -8,7 +9,7 @@ export interface TracRoutePermissionConfig {
   operation: TracRoutePermissionOperation;
 }
 
-/** RBAC permission string for a TRAC page id (e.g. `read:page.planning`). */
+/** RBAC permission string for a TRAC page id (e.g. `read:page.PlanningPage`). */
 export function tracNavPermissionForPage(pageId: string): string {
   return `read:page.${pageId}`;
 }
@@ -34,7 +35,7 @@ export const TRAC_ROUTE_PATH_PERMISSIONS: Record<string, TracRoutePermissionOper
 
 /** Secondary routes (not in primary nav) → RBAC page id. */
 export const TRAC_SECONDARY_ROUTE_PAGE_IDS: Record<string, string> = {
-  '/currency-rates': 'currency-rates',
+  '/currency-rates': TRAC_PAGE_NAMES.currencyRates,
 };
 
 /** Nav `id` → RBAC `pageId` for registration alignment. */

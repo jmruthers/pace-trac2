@@ -7,6 +7,7 @@ import {
   LoadingSpinner,
 } from '@solvera/pace-core/components';
 import { PagePermissionGuard, useResourcePermissions } from '@solvera/pace-core/rbac';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import type { JournalPost, JournalPostStatus } from '@/types/journal';
 import { JournalPostEditor } from '@/components/journal/JournalPostEditor';
 import { JournalPostList } from '@/components/journal/JournalPostList';
@@ -14,7 +15,7 @@ import { useJournalPosts } from '@/hooks/journal/useJournalPosts';
 
 function JournalPageContent() {
   const { canCreate, canUpdate, canDelete, isLoading: permissionsLoading } =
-    useResourcePermissions('journal');
+    useResourcePermissions(TRAC_PAGE_NAMES.journal);
   const {
     posts,
     isLoading,
@@ -133,7 +134,7 @@ function JournalPageContent() {
 export function JournalPage() {
   return (
     <main>
-      <PagePermissionGuard pageName="journal" operation="read">
+      <PagePermissionGuard pageName={TRAC_PAGE_NAMES.journal} operation="read">
         <JournalPageContent />
       </PagePermissionGuard>
     </main>

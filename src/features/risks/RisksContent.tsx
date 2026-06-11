@@ -3,6 +3,7 @@ import { Alert, Button, DataTable, type DataTableColumn } from '@solvera/pace-co
 import { RisksRegisterCard } from '@/features/risks/components/RisksRegisterCard';
 import { usePaceMain } from '@solvera/pace-core/hooks';
 import { usePageCan } from '@solvera/pace-core/rbac';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { RiskDialog } from '@/features/risks/components/RiskDialog';
 import { formatRiskImpact } from '@/features/risks/format-risk-impact';
 import { useRisks } from '@/features/risks/hooks/use-risks';
@@ -17,7 +18,7 @@ export function RisksContent() {
     printPageOrientation: 'landscape',
   });
 
-  const { can: canCreate } = usePageCan('risks', 'create');
+  const { can: canCreate } = usePageCan(TRAC_PAGE_NAMES.risks, 'create');
   const { risks, isLoading, error, addRisk, updateRisk, deleteRisk, isSaving } = useRisks();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -151,7 +152,7 @@ export function RisksContent() {
           <DataTable
             data={risks}
             columns={columns}
-            rbac={{ pageName: 'risks' }}
+            rbac={{ pageName: TRAC_PAGE_NAMES.risks }}
             features={{
               search: true,
               pagination: true,

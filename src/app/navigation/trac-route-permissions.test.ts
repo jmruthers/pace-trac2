@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { TRAC_PRIMARY_NAV_DEFINITIONS } from '@/app/navigation/trac-nav-definitions';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import {
   TRAC_ROUTE_PERMISSIONS,
   TRAC_PAGE_ID_MAPPING,
@@ -9,19 +10,19 @@ import {
   withTracNavPermissions,
 } from '@/app/navigation/trac-route-permissions';
 
-const KEBAB_PAGE_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const PASCAL_PAGE_RE = /^[A-Z][a-zA-Z0-9]*Page$/;
 
 /** Canonical TRAC v1 page keys — must match rbac_app_pages for app TRAC on dev-db. */
 export const TRAC_CANONICAL_PAGE_NAMES = [
-  'contacts',
-  'costs',
-  'currency-rates',
-  'dashboard',
-  'itinerary',
-  'journal',
-  'masterplan',
-  'planning',
-  'risks',
+  TRAC_PAGE_NAMES.contacts,
+  TRAC_PAGE_NAMES.costs,
+  TRAC_PAGE_NAMES.currencyRates,
+  TRAC_PAGE_NAMES.dashboard,
+  TRAC_PAGE_NAMES.itinerary,
+  TRAC_PAGE_NAMES.journal,
+  TRAC_PAGE_NAMES.masterplan,
+  TRAC_PAGE_NAMES.planning,
+  TRAC_PAGE_NAMES.risks,
 ] as const;
 
 function collectAppPageNames(): string[] {
@@ -36,63 +37,67 @@ function collectAppPageNames(): string[] {
 describe('trac-route-permissions', () => {
   it('maps nav ids to read page permissions', () => {
     expect(TRAC_ROUTE_PERMISSIONS.planning).toEqual({
-      pageName: 'planning',
+      pageName: TRAC_PAGE_NAMES.planning,
       operation: 'read',
     });
-    expect(tracNavPermissionForPage('planning')).toBe('read:page.planning');
+    expect(tracNavPermissionForPage(TRAC_PAGE_NAMES.planning)).toBe(
+      `read:page.${TRAC_PAGE_NAMES.planning}`,
+    );
   });
 
   it('exposes pageId mapping for RBAC registration', () => {
-    expect(TRAC_PAGE_ID_MAPPING.planning).toBe('planning');
-    expect(TRAC_PAGE_ID_MAPPING.assignments).toBe('planning');
+    expect(TRAC_PAGE_ID_MAPPING.planning).toBe(TRAC_PAGE_NAMES.planning);
+    expect(TRAC_PAGE_ID_MAPPING.assignments).toBe(TRAC_PAGE_NAMES.planning);
   });
 
-  it('uses only kebab-case page keys across nav, secondary routes, and route permissions', () => {
+  it('uses only PascalCase page keys across nav, secondary routes, and route permissions', () => {
     for (const pageName of collectAppPageNames()) {
-      expect(pageName, `page key "${pageName}" must be kebab-case`).toMatch(KEBAB_PAGE_RE);
+      expect(pageName, `page key "${pageName}" must be PascalCase`).toMatch(PASCAL_PAGE_RE);
     }
   });
 
   it('registers all routable page keys as a subset of the canonical catalogue', () => {
     const uniquePageNames = [...new Set(collectAppPageNames())].sort();
-    const routableCanonical = TRAC_CANONICAL_PAGE_NAMES.filter((pageName) => pageName !== 'dashboard').sort();
+    const routableCanonical = TRAC_CANONICAL_PAGE_NAMES.filter(
+      (pageName) => pageName !== TRAC_PAGE_NAMES.dashboard,
+    ).sort();
     expect(uniquePageNames).toEqual(routableCanonical);
   });
 
   it('defines nine canonical TRAC page keys matching rbac_app_pages', () => {
     expect(TRAC_CANONICAL_PAGE_NAMES).toHaveLength(9);
     for (const pageName of TRAC_CANONICAL_PAGE_NAMES) {
-      expect(pageName).toMatch(KEBAB_PAGE_RE);
+      expect(pageName).toMatch(PASCAL_PAGE_RE);
     }
   });
 
   it('resolves route path permissions for IA routes', () => {
     expect(getTracRoutePermissionForPath('/planning')).toEqual({
-      pageName: 'planning',
+      pageName: TRAC_PAGE_NAMES.planning,
       operation: 'read',
     });
     expect(getTracRoutePermissionForPath('/journal')).toEqual({
-      pageName: 'journal',
+      pageName: TRAC_PAGE_NAMES.journal,
       operation: 'read',
     });
     expect(getTracRoutePermissionForPath('/risks')).toEqual({
-      pageName: 'risks',
+      pageName: TRAC_PAGE_NAMES.risks,
       operation: 'read',
     });
     expect(getTracRoutePermissionForPath('/itinerary')).toEqual({
-      pageName: 'itinerary',
+      pageName: TRAC_PAGE_NAMES.itinerary,
       operation: 'read',
     });
     expect(getTracRoutePermissionForPath('/costs')).toEqual({
-      pageName: 'costs',
+      pageName: TRAC_PAGE_NAMES.costs,
       operation: 'read',
     });
     expect(getTracRoutePermissionForPath('/currency-rates')).toEqual({
-      pageName: 'currency-rates',
+      pageName: TRAC_PAGE_NAMES.currencyRates,
       operation: 'read',
     });
     expect(getTracRoutePermissionForPath('/masterplan')).toEqual({
-      pageName: 'masterplan',
+      pageName: TRAC_PAGE_NAMES.masterplan,
       operation: 'read',
     });
     expect(getTracRoutePermissionForPath('/')).toBeUndefined();
@@ -101,8 +106,8 @@ describe('trac-route-permissions', () => {
 
   it('attaches permissions to enabled nav items', () => {
     const items = withTracNavPermissions([
-      { id: 'planning', label: 'Planning', href: '/planning', pageId: 'planning' },
+      { id: 'planning', label: 'Planning', href: '/planning', pageId: TRAC_PAGE_NAMES.planning },
     ]);
-    expect(items[0]?.permissions).toEqual(['read:page.planning']);
+    expect(items[0]?.permissions).toEqual([`read:page.${TRAC_PAGE_NAMES.planning}`]);
   });
 });

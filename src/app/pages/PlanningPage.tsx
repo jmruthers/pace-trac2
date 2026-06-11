@@ -1,5 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@solvera/pace-core/components';
 import { PagePermissionGuard } from '@solvera/pace-core/rbac';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { AccommodationList } from '@/features/planning/components/AccommodationList';
 import { ActivityList } from '@/features/planning/components/ActivityList';
 import { TransportList } from '@/features/planning/components/TransportList';
@@ -8,7 +9,7 @@ import { GoogleMapsPlanningProvider } from '@/features/planning/context/GoogleMa
 export function PlanningPage() {
   return (
     <main>
-      <PagePermissionGuard pageName="planning" operation="read">
+      <PagePermissionGuard pageName={TRAC_PAGE_NAMES.planning} operation="read">
         <GoogleMapsPlanningProvider>
           <h1>Planning</h1>
           <p>

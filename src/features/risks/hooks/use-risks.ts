@@ -2,13 +2,14 @@ import { useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEvents } from '@solvera/pace-core/hooks';
 import { useResourcePermissions, useSecureSupabase } from '@solvera/pace-core/rbac';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { assertNoGeneratedImpactKeys, toRiskWritePayload } from '@/features/risks/build-risk-payload';
 import { parseRiskFormData } from '@/features/risks/risk-schema';
 import { risksTable } from '@/features/risks/supabase-risks-client';
 import type { Risk, RiskFormData } from '@/features/risks/types';
 import { tracRisksQueryKey } from '@/features/contacts/contact-query-keys';
 
-const RISKS_PAGE = 'risks';
+const RISKS_PAGE = TRAC_PAGE_NAMES.risks;
 
 export function useRisks() {
   const { selectedEvent, isLoading: eventLoading } = useEvents();

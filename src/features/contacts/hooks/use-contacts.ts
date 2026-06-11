@@ -2,11 +2,12 @@ import { useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEvents } from '@solvera/pace-core/hooks';
 import { useResourcePermissions, useSecureSupabase } from '@solvera/pace-core/rbac';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import type { Contact, ContactFormData } from '@/features/contacts/types';
 import { invalidateContactsAndRiskPickers, tracContactsQueryKey } from '@/features/contacts/contact-query-keys';
 import { contactsTable } from '@/features/contacts/supabase-contacts-client';
 
-const CONTACTS_PAGE = 'contacts';
+const CONTACTS_PAGE = TRAC_PAGE_NAMES.contacts;
 
 function mapForeignKeyDeleteError(error: { code?: string; message?: string }): Error {
   if (error.code === '23503') {

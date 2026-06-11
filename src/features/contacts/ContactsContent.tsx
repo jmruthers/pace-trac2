@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Alert, Card, DataTable, type DataTableColumn } from '@solvera/pace-core/components';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { parseContactFormData } from '@/features/contacts/contact-schema';
 import { useContacts } from '@/features/contacts/hooks/use-contacts';
 import type { Contact, ContactFormData } from '@/features/contacts/types';
@@ -102,7 +103,7 @@ export function ContactsContent() {
           <DataTable
             data={contacts}
             columns={columns}
-            rbac={{ pageName: 'contacts' }}
+            rbac={{ pageName: TRAC_PAGE_NAMES.contacts }}
             features={{
               search: true,
               pagination: true,

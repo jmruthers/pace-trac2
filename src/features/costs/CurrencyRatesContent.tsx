@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Card, DataTable, type DataTableColumn } from '@solvera/pace-core/components';
 import { usePaceMain } from '@solvera/pace-core/hooks';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { parseCurrencyRateFormData } from '@/features/costs/currency-rate-schema';
 import { useBaseCurrency } from '@/features/costs/hooks/useBaseCurrency';
 import { useCurrencyRates } from '@/features/costs/hooks/useCurrencyRates';
@@ -90,7 +91,7 @@ export function CurrencyRatesContent() {
           <DataTable
             data={rates}
             columns={columns}
-            rbac={{ pageName: 'currency-rates' }}
+            rbac={{ pageName: TRAC_PAGE_NAMES.currencyRates }}
             features={{
               search: true,
               pagination: true,

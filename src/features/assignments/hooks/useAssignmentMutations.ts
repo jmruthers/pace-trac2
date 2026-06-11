@@ -1,13 +1,14 @@
 import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { usePageCan, useSecureSupabase } from '@solvera/pace-core/rbac';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { mapAssignmentError } from '@/features/assignments/errors';
 import { invalidateAssignmentsAndDependents } from '@/features/assignments/invalidation';
 import { useAssignmentsScope } from '@/features/assignments/hooks/useAssignmentsScope';
 import { asAssignmentsClient } from '@/features/assignments/supabase-helpers';
 import type { AssignmentWriteInput } from '@/features/assignments/types';
 
-const PLANNING_PAGE = 'planning';
+const PLANNING_PAGE = TRAC_PAGE_NAMES.planning;
 
 export function useAssignmentMutations() {
   const secureSupabase = asAssignmentsClient(useSecureSupabase());

@@ -1,12 +1,13 @@
 import { LoadingSpinner } from '@solvera/pace-core/components';
 import { AccessDenied, PagePermissionGuard } from '@solvera/pace-core/rbac';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { DashboardContent } from '@/features/dashboard/DashboardContent';
 
 /** SLICE-02 — event dashboard at `/` and `/dashboard`. */
 export function DashboardPage() {
   return (
     <PagePermissionGuard
-      pageName="dashboard"
+      pageName={TRAC_PAGE_NAMES.dashboard}
       operation="read"
       loading={
         <main className="grid min-h-[50vh] place-items-center px-4" aria-busy="true">

@@ -1,13 +1,14 @@
 import { useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useResourcePermissions, useSecureSupabase } from '@solvera/pace-core/rbac';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { costsQueryKeys, TRAC_COSTS_QUERY_PREFIX } from '@/features/costs/cost-query-keys';
 import { parseCurrencyRateFormData } from '@/features/costs/currency-rate-schema';
 import { useCostsScope } from '@/features/costs/hooks/useCostsScope';
 import { currencyRatesTable } from '@/features/costs/supabase-costs-client';
 import type { CurrencyRateFormData, CurrencyRateRow } from '@/features/costs/types';
 
-const CURRENCY_RATES_PAGE = 'currency-rates';
+const CURRENCY_RATES_PAGE = TRAC_PAGE_NAMES.currencyRates;
 
 function toFormInput(row: Partial<CurrencyRateRow>): CurrencyRateFormData {
   return parseCurrencyRateFormData({

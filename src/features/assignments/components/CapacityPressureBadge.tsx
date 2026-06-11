@@ -1,4 +1,4 @@
-import { Badge } from '@solvera/pace-core/components';
+import { Badge, type BadgeVariant } from '@solvera/pace-core/components';
 import type { CapacityPressure } from '@/features/assignments/headcount';
 
 const PRESSURE_LABEL: Record<CapacityPressure, string> = {
@@ -7,10 +7,10 @@ const PRESSURE_LABEL: Record<CapacityPressure, string> = {
   over: 'Over capacity',
 };
 
-const PRESSURE_CLASS: Record<CapacityPressure, string> = {
-  ok: 'bg-main-100 text-main-800 border-main-200',
-  near: 'bg-acc-100 text-acc-800 border-acc-300',
-  over: 'bg-acc-200 text-acc-900 border-acc-500',
+const PRESSURE_VARIANT: Record<CapacityPressure, BadgeVariant> = {
+  ok: 'outline-main-muted',
+  near: 'outline-acc-muted',
+  over: 'outline-acc-strong',
 };
 
 interface CapacityPressureBadgeProps {
@@ -18,7 +18,5 @@ interface CapacityPressureBadgeProps {
 }
 
 export function CapacityPressureBadge({ pressure }: CapacityPressureBadgeProps) {
-  return (
-    <Badge className={PRESSURE_CLASS[pressure]}>{PRESSURE_LABEL[pressure]}</Badge>
-  );
+  return <Badge variant={PRESSURE_VARIANT[pressure]}>{PRESSURE_LABEL[pressure]}</Badge>;
 }

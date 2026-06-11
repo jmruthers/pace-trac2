@@ -13,6 +13,7 @@ import type {
   TransportRow,
 } from '@/features/planning/types';
 import { ItineraryPage } from '@/app/pages/ItineraryPage';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { ItineraryContent } from '@/features/itinerary/ItineraryContent';
 
 const mockUseSecureSupabase = vi.fn();
@@ -81,7 +82,7 @@ vi.mock('@solvera/pace-core/rbac', async (importOriginal) => {
       children: ReactNode;
       fallback?: ReactNode;
     }) => {
-      const itineraryRead = mockUsePageCan('itinerary', 'read');
+      const itineraryRead = mockUsePageCan(TRAC_PAGE_NAMES.itinerary, 'read');
       if (itineraryRead.isLoading) return null;
       if (!itineraryRead.can) return fallback ?? null;
       return children;
@@ -276,10 +277,10 @@ function createQueryWrapper() {
 
 function mockPageCan(planningRead: boolean, itineraryRead = true) {
   mockUsePageCan.mockImplementation((pageName: string, operation: string) => {
-    if (pageName === 'itinerary' && operation === 'read') {
+    if (pageName === TRAC_PAGE_NAMES.itinerary && operation === 'read') {
       return { can: itineraryRead, isLoading: false };
     }
-    if (pageName === 'planning' && operation === 'read') {
+    if (pageName === TRAC_PAGE_NAMES.planning && operation === 'read') {
       return { can: planningRead, isLoading: false };
     }
     return { can: false, isLoading: false };

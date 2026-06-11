@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { ItineraryContent } from '@/features/itinerary/ItineraryContent';
 import { INVALID_TRANSPORT_RESOURCE } from '@/features/itinerary/itinerary-fixtures';
 import type { TransportRow } from '@/features/planning/types';
@@ -142,7 +143,7 @@ describe('ItineraryContent validation (TR05 #2)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUsePageCan.mockImplementation((pageName: string) => ({
-      can: pageName === 'planning' || pageName === 'itinerary',
+      can: pageName === TRAC_PAGE_NAMES.planning || pageName === TRAC_PAGE_NAMES.itinerary,
       isLoading: false,
     }));
     mockUseSecureSupabase.mockReturnValue(buildValidationMockSupabase());

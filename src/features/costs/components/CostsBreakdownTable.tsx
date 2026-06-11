@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Card, DataTable, type DataTableColumn } from '@solvera/pace-core/components';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { formatResourceTypeLabel } from '@/features/costs/cost-labels';
 import { formatCostAmount } from '@/features/costs/currency-format';
 import type { CostRollupResult, CostRowBreakdown } from '@/features/costs/types';
@@ -90,7 +91,7 @@ export function CostsBreakdownTable({ rollup, isLoading = false }: CostsBreakdow
       <DataTable
         data={rows as unknown as Record<string, unknown>[]}
         columns={columns as unknown as DataTableColumn<Record<string, unknown>>[]}
-        rbac={{ pageName: 'costs' }}
+        rbac={{ pageName: TRAC_PAGE_NAMES.costs }}
         features={{
           search: true,
           pagination: true,
