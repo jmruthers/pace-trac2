@@ -30,7 +30,7 @@
 | Provider stack (auth, inactivity, org, event) | Complete |
 | Protected routing + event gating | Complete |
 | Nav IA defined; links enabled as routes register | Complete |
-| Navigation permission scaffold (`permissions`, `routePermissions`, `enforcePermissions`) | Complete |
+| Navigation permission scaffold (`pageId` on nav items, `routeAccessDenied`, `enforcePermissions`) | Complete |
 | No domain CRUD | Complete |
 
 ---

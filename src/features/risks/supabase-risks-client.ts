@@ -12,6 +12,7 @@ type RisksSelectBuilder = {
     eq(column: string, value: string): {
       order(column: string, options: { ascending: boolean }): ListResult<Risk>;
     };
+    neq(column: string, value: string): ListResult<Pick<Risk, 'event_id'>>;
   };
 };
 

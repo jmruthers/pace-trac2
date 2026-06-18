@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Card, DataTable, type DataTableColumn } from '@solvera/pace-core/components';
+import { Alert, Card, DataTable, PageHeader, type DataTableColumn } from '@solvera/pace-core/components';
 import { usePaceMain } from '@solvera/pace-core/hooks';
 import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
+import { useTracEventBreadcrumbs } from '@/app/shell/use-trac-event-breadcrumbs';
 import { parseCurrencyRateFormData } from '@/features/costs/currency-rate-schema';
 import { useBaseCurrency } from '@/features/costs/hooks/useBaseCurrency';
 import { useCurrencyRates } from '@/features/costs/hooks/useCurrencyRates';
@@ -10,6 +11,7 @@ import type { CurrencyRateRow } from '@/features/costs/types';
 
 export function CurrencyRatesContent() {
   usePaceMain({ printTitle: 'Currency rates' });
+  const breadcrumbItems = useTracEventBreadcrumbs('Currency rates');
 
   const { baseCurrency, isLoading: baseLoading, error: baseError } = useBaseCurrency();
   const {
@@ -71,23 +73,28 @@ export function CurrencyRatesContent() {
   const displayError = error ?? (baseError instanceof Error ? baseError.message : null);
 
   return (
-    <main>
-      <section>
-        <h1>Currency rates</h1>
-        <p>
-          Manual exchange rates for this event. Rates convert logistics row currencies into the
-          organisation base currency
-          {baseCurrency != null ? ` (${baseCurrency})` : ''}.
-        </p>
-        {displayError != null ? (
-          <Alert variant="destructive" role="alert">
-            <p>{displayError}</p>
-          </Alert>
-        ) : null}
-        <fieldset aria-label="Costs navigation" className="grid justify-end">
-          <Link to="/costs">Back to costs</Link>
-        </fieldset>
-        <Card>
+    <main className="grid gap-4">
+      <PageHeader
+        breadcrumbItems={breadcrumbItems}
+        title="Currency rates"
+        subtitle={
+          baseCurrency != null
+            ? `Manual exchange rates for this event. Rates convert logistics row currencies into ${baseCurrency}.`
+            : 'Manual exchange rates for this event.'
+        }
+        actions={<Link to="/costs">Back to costs</Link>}
+      />
+      {baseCurrency != null ? (
+        <Alert>
+          <p>Base currency for this event: {baseCurrency}</p>
+        </Alert>
+      ) : null}
+      {displayError != null ? (
+        <Alert variant="destructive" role="alert">
+          <p>{displayError}</p>
+        </Alert>
+      ) : null}
+      <Card>
           <DataTable
             data={rates}
             columns={columns}
@@ -110,7 +117,6 @@ export function CurrencyRatesContent() {
         {!loading && displayError == null && rates.length === 0 ? (
           <p>No currency rates yet. Add rates for foreign currencies used on logistics rows.</p>
         ) : null}
-      </section>
     </main>
   );
 }

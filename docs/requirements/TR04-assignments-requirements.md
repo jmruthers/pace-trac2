@@ -98,7 +98,10 @@ Legacy TRAC had **no dedicated assignments route** and did not surface assignmen
 - [ ] Section card **Assigned people** beside resource details on item page layout (prototype `item-assign`).
 - [ ] Headline readout: assigned count vs capacity (or **uncapped**); capacity bar with over/near/full styling; over-capacity note when assigned > capacity.
 - [ ] Named assignment list with participant cells and per-row notes; remove action per row.
-- [ ] **Add participant** flow: toggle reveals search + pick list of approved members not yet assigned; selecting adds row and warns when over capacity.
+- [ ] **Assign participant** flow: primary toggles add mode; **Done adding** collapses it (not a persistent expanded panel).
+- [ ] Toolbar row: **Named allocations ({n})** label opposite the assign toggle.
+- [ ] When add mode is open and at/over capacity, show inline **over-capacity / at-capacity** alert above search (prototype `over-cap-warn`), not toast-only.
+- [ ] Per-row notes input with placeholder **Add a note (seat, room, subgroup)…** between participant cell and remove control.
 - [ ] Further unnamed headcount note when assigned count exceeds named rows (prototype `further` count).
 - [ ] Production `/assignments` route: by-resource table view per rebuild target — not required to duplicate two-column item layout.
 
@@ -117,23 +120,34 @@ Legacy TRAC had **no dedicated assignments route** and did not surface assignmen
 
 ### Prototype layout authority (`AssignPanel` on `PlanningItemPage`)
 
-Embedded in planning item **two-column** `item-layout` (details card + assignment card):
+Embedded in planning item **stacked** `item-layout` (details card above assignment card):
 
 **Header row (`section-card-head`):**
 
 - Title **Assigned people**; subtitle explaining named allocations vs headcount cost basis.
 - Capacity readout (`asg-cap-readout`): large **assigned / capacity** (or assigned only when uncapped); horizontal bar with over/near/full states; mono notes (**N over capacity**, **at capacity**).
 
-**Body:**
+**Toolbar (`asg-bar`):**
 
-- List of named assignments: `ParticipantCell` + optional notes field + remove control.
-- **Add participant** toggle expands search (`SearchInput`) and scrollable pick list of available approved members.
+- Left: mono label **Named allocations ({named.length})**.
+- Right: primary **Assign participant** (reveals add block) or secondary **Done adding** (collapses add block).
+
+**Add block (`asg-add`):**
+
+- When capacity is at/over limit, `over-cap-warn` alert (icon + strong headline + explanatory copy) above `SearchInput`.
+- Scrollable pick list (`asg-add-list` / `asg-add-row`): avatar, name, member id, plus icon.
+
+**Named list (`asg-list`):**
+
+- `<ul>` rows: `ParticipantCell` → notes `<input class="asg-note-input">` → icon remove.
 - Footer note when headcount exceeds named rows (“N further unnamed seats” pattern).
 
 **Interactions:**
 
-- Add participant: toast on success; warn tone when assignment exceeds capacity (prototype — maps to architecture Option B confirmation in production).
+- **Assign participant:** toast on success; inline over-cap alert when assignment exceeds capacity (prototype — maps to architecture Option B confirmation in production).
 - Remove assignment: immediate with toast.
+
+**Prototype reference:** `pace-prototype/apps/pace-trac/pages/PlanningPage.jsx` — `PlanningItemPage`, `AssignPanel`. Prototype has no `/assignments` route.
 
 ### Production `/assignments` route (pass 2)
 

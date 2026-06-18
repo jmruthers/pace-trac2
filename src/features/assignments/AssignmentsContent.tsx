@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@solvera/pace-core/components';
+import { PageHeader, Tabs, TabsContent, TabsList, TabsTrigger } from '@solvera/pace-core/components';
+import { useTracEventBreadcrumbs } from '@/app/shell/use-trac-event-breadcrumbs';
 import { AssignmentList } from '@/features/assignments/components/AssignmentList';
 import { ResourcePicker } from '@/features/assignments/components/ResourcePicker';
 import { useResourceSummaries } from '@/features/assignments/hooks/useResourceSummaries';
@@ -11,6 +12,7 @@ const TAB_KINDS: LogisticsResourceKind[] = ['transport', 'accommodation', 'activ
 const DEFAULT_KIND: LogisticsResourceKind = 'transport';
 
 export function AssignmentsContent() {
+  const breadcrumbItems = useTracEventBreadcrumbs('Assignments');
   const [searchParams, setSearchParams] = useSearchParams();
 
   const kindParam = searchParams.get('kind');
@@ -45,12 +47,12 @@ export function AssignmentsContent() {
   const resource = resourceId != null ? selectedSummary(resourceId) : undefined;
 
   return (
-    <>
-      <h1>Assignments</h1>
-      <p>
-        Link approved participants to transport, accommodation, and activities. All assignment
-        changes are managed here — Planning remains logistics-only.
-      </p>
+    <section className="grid gap-4">
+      <PageHeader
+        breadcrumbItems={breadcrumbItems}
+        title="Assignments"
+        subtitle="Link approved participants to transport, accommodation, and activities. All assignment changes are managed here — Planning remains logistics-only."
+      />
 
       <Tabs value={activeKind} onValueChange={handleKindChange}>
         <TabsList>
@@ -80,6 +82,6 @@ export function AssignmentsContent() {
           </TabsContent>
         ))}
       </Tabs>
-    </>
+    </section>
   );
 }

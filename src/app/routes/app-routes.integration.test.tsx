@@ -125,5 +125,6 @@ describe('app-routes integration', () => {
     );
 
     expect(screen.getByText('Page not found')).toBeInTheDocument();
+    expect(screen.getByText('Back to events')).toBeInTheDocument();
   });
 });

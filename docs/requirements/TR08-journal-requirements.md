@@ -26,6 +26,7 @@
 Event **journal** at `/journal`: **posts** with optional **images**, backed by **`trac_journal_posts`** and **`trac_journal_images`** + Supabase Storage. **RLS:** Both tables use `check_rbac_permission_with_context` with page key **`journal`** and TRAC app id (architecture — policy hygiene migration). **Critical:** `trac_journal_posts` passes `event_id` to permission checker; **`trac_journal_images` has no `event_id`** — pass `NULL` for event param in policy; **app must load images only via posts** (query posts filtered by `event_id`, join images), never a bare images list for event UI.
 
 - Prototype reference: list, new, and item editors in `pace-prototype/apps/pace-trac/pages/JournalPage.jsx` (`JournalPage`, `JournalNewPage`, `JournalItemPage` — full-page routes, draft/publish dual actions).
+- Prototype routes: `#/events/:code/journal`, `#/events/:code/journal/new`, `#/events/:code/journal/:postId`.
 
 ---
 
@@ -97,6 +98,7 @@ Event **journal** at `/journal`: **posts** with optional **images**, backed by *
 - [ ] New post: full page with `BackLink`, section card for title + content + image list; footer **Cancel**, **Save as draft**, **Publish** (not single Save).
 - [ ] Edit post: status badge + Delete in header; same fields; publish label **Update post** when already published.
 - [ ] List quick **Publish** on draft cards without opening editor (prototype).
+- [ ] Filter tabs reduce the feed client-side; empty state copy is shared (no filter-specific empty variant in prototype).
 
 ---
 
@@ -115,21 +117,21 @@ Event **journal** at `/journal`: **posts** with optional **images**, backed by *
 
 - `PageHeader`: breadcrumb; title **Journal**; subtitle draft vs publish semantics; **New post** primary action.
 - **Status filter tabs:** All, Published, Drafts — each with count badge.
-- **Post feed** (`journal-list`): each post in `Card`:
-  - Status `Badge` (published vs draft).
-  - Title as link button → item route.
-  - Meta line: author, published date or “not yet published”.
-  - Body text preview.
-  - Image strip: placeholder tiles with optional captions.
-  - Actions: **Edit**, **Publish** (draft only), delete icon.
+- **Post feed** (`journal-list`): each post in `Card` with inner `journal-post` grid:
+  - `jp-head`: status `Badge`; `h2` > `button.journal-title-link` (title navigates to item route); `jp-meta` (author · published date or “not yet published”).
+  - `jp-body`: full post `content` text (prototype does not truncate).
+  - `jp-images` (when present): placeholder tiles (`jp-image` + `ph-tag` “image” + optional caption).
+  - `jp-actions`: **Edit** (secondary) · **Publish** (primary, drafts only) · delete icon.
 - Empty: book glyph, **No posts yet**, CTA copy.
 
 ### New post (full-page — `#/events/:code/journal/new`)
 
 - `BackLink` → journal list.
 - `PageHeader`: **New journal post**.
-- Section card **Post**: title input, content textarea, **Images** subsection with add/remove rows (caption per image).
-- `JournalSaveBar` footer: Cancel | **Save as draft** (secondary) | **Publish** (primary).
+- Section card **Post**: title input, content textarea (min-height ~220px), **Images** subsection with add/remove rows (caption per image placeholder).
+- **JournalFields** stack: `Field` + `Input` for title; `Textarea` for content; `journal-images-head` — mono label “Images (N)” + **Add image**; each `jei-row` with placeholder block + caption `Input` + remove icon.
+- `JournalSaveBar` footer: **Cancel** (secondary) | **Save as draft** (secondary, edit icon) | **Publish** (primary, check icon). Edit page when already published: primary label **Update post** (not “Publish”).
+- New post page includes `BackLink`; edit page uses header only (no `BackLink` in prototype).
 
 ### Edit post (full-page — `#/events/:code/journal/:postId`)
 
@@ -142,6 +144,7 @@ Event **journal** at `/journal`: **posts** with optional **images**, backed by *
 
 - Prototype image rows use caption placeholders; production uses real storage upload with progress ([TR08-slice-completion.md](../delivery/TR08-slice-completion.md)).
 - Prototype routes under `#/events/:code/journal/*`; production flat `/journal` + nested routes.
+- Prototype create/edit are **full-page routes** (`JournalNewPage`, `JournalItemPage` with `BackLink`, section card, `JournalSaveBar`). Current production (`JournalPage.tsx` + dialog editor) is layout drift — pass 2 should uplift to routed full-page editors matching prototype, or document explicit deferral.
 - List inline Publish is optional parity; editor publish path is required.
 
 ---

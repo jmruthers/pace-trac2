@@ -23,6 +23,10 @@ const sampleForm: RiskFormData = {
   consequence_after: 'Significant',
 };
 
+vi.mock('@/app/shell/use-trac-event-breadcrumbs', () => ({
+  useTracEventBreadcrumbs: () => [],
+}));
+
 vi.mock('@solvera/pace-core/hooks', () => ({
   usePaceMain: (...args: unknown[]) => mockUsePaceMain(...args),
 }));

@@ -5,15 +5,19 @@ import type { MasterPlanEventHeader } from '@/features/master-plan/hooks/useMast
 
 interface MasterPlanHeaderProps {
   header: MasterPlanEventHeader;
+  eventCode: string;
+  baseCurrency: string | null;
 }
 
-export function MasterPlanHeader({ header }: MasterPlanHeaderProps) {
+export function MasterPlanHeader({ header, eventCode, baseCurrency }: MasterPlanHeaderProps) {
   const secureSupabase = useSecureSupabase();
   const { url: logoUrl } = useFileDisplay(header.logoFileReference, {
     client: secureSupabase as unknown as NonNullable<
       Parameters<typeof useFileDisplay>[1]
     >['client'],
   });
+
+  const codeLabel = eventCode !== '' ? eventCode : 'Event';
 
   return (
     <header className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-center">
@@ -30,11 +34,20 @@ export function MasterPlanHeader({ header }: MasterPlanHeaderProps) {
           label={`${header.eventName} logo`}
         />
       ) : null}
-      <section className="grid gap-2">
-        <h1>Master Plan</h1>
-        <p>{header.eventName}</p>
-        <p>{header.dateRangeLabel}</p>
-      </section>
+      <article className="grid gap-2">
+        <p>Master plan · {codeLabel}</p>
+        <h1>{header.eventName}</h1>
+        <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <article>
+            <h2>Dates</h2>
+            <p>{header.dateRangeLabel}</p>
+          </article>
+          <article>
+            <h2>Base currency</h2>
+            <p>{baseCurrency ?? '—'}</p>
+          </article>
+        </section>
+      </article>
     </header>
   );
 }

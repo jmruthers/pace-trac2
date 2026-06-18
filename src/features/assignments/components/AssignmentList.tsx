@@ -57,7 +57,7 @@ export function AssignmentList({ resourceType, resource }: AssignmentListProps) 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Assignments</CardTitle>
+        <CardTitle>Assigned people</CardTitle>
         <CapacityPressureBadge pressure={pressure} />
         <p>{formatHeadcountLine(assignedCount, resource.capacity)}</p>
         {canCreate ? (

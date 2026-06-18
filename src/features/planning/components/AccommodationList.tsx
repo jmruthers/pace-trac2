@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Alert,
@@ -20,13 +20,19 @@ function formatWhen(iso: string): string {
   return new Date(iso).toLocaleString();
 }
 
-export function AccommodationList() {
+export function AccommodationList({ openCreateToken }: { openCreateToken?: number } = {}) {
   const { items, isLoading, isError, error } = useAccommodationList();
   const { createItem, updateItem, deleteItem } = useAccommodationMutations();
   const { can: canCreate } = usePageCan('planning', 'create');
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selected, setSelected] = useState<AccommodationRow | undefined>();
+
+  useEffect(() => {
+    if (openCreateToken == null || openCreateToken === 0) return;
+    setSelected(undefined);
+    setDialogOpen(true);
+  }, [openCreateToken]);
 
   if (isLoading) return <LoadingSpinner />;
   if (isError) {

@@ -1,19 +1,28 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   AlertDescription,
   AlertTitle,
   Button,
   LoadingSpinner,
+  PageHeader,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from '@solvera/pace-core/components';
 import { PagePermissionGuard, useResourcePermissions } from '@solvera/pace-core/rbac';
 import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
+import { useTracEventBreadcrumbs } from '@/app/shell/use-trac-event-breadcrumbs';
 import type { JournalPost, JournalPostStatus } from '@/types/journal';
 import { JournalPostEditor } from '@/components/journal/JournalPostEditor';
 import { JournalPostList } from '@/components/journal/JournalPostList';
 import { useJournalPosts } from '@/hooks/journal/useJournalPosts';
 
+type JournalStatusFilter = 'all' | JournalPostStatus;
+
 function JournalPageContent() {
+  const breadcrumbItems = useTracEventBreadcrumbs('Journal');
   const { canCreate, canUpdate, canDelete, isLoading: permissionsLoading } =
     useResourcePermissions(TRAC_PAGE_NAMES.journal);
   const {
@@ -32,6 +41,7 @@ function JournalPageContent() {
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<JournalPost | null>(null);
+  const [statusFilter, setStatusFilter] = useState<JournalStatusFilter>('all');
 
   const handleNewEntry = useCallback(() => {
     setEditingPost(null);
@@ -79,25 +89,52 @@ function JournalPageContent() {
     [deletePost]
   );
 
+  const handlePublishFromCard = useCallback(
+    async (post: JournalPost) => {
+      await updatePost({
+        postId: post.id,
+        title: post.title,
+        content: post.content,
+        status: 'published',
+        images: [],
+      });
+    },
+    [updatePost]
+  );
+
+  const statusCounts = useMemo(() => {
+    let drafts = 0;
+    let published = 0;
+    for (const post of posts) {
+      if (post.status === 'draft') drafts += 1;
+      if (post.status === 'published') published += 1;
+    }
+    return { all: posts.length, drafts, published };
+  }, [posts]);
+
+  const filteredPosts = useMemo(() => {
+    if (statusFilter === 'all') return posts;
+    return posts.filter((post) => post.status === statusFilter);
+  }, [posts, statusFilter]);
+
+  const headerActions = canCreate ? (
+    <Button type="button" onClick={handleNewEntry}>
+      New post
+    </Button>
+  ) : null;
+
   if (isLoading || permissionsLoading) {
     return <LoadingSpinner />;
   }
 
   return (
     <section className="grid gap-4">
-      <header className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
-        <section>
-          <h1>Journal</h1>
-          <p>Chronological record of this event with optional images.</p>
-        </section>
-        {canCreate && (
-          <fieldset className="grid justify-items-end">
-            <Button type="button" onClick={handleNewEntry}>
-              New entry
-            </Button>
-          </fieldset>
-        )}
-      </header>
+      <PageHeader
+        breadcrumbItems={breadcrumbItems}
+        title="Journal"
+        subtitle="Chronological record of this event with optional images."
+        actions={headerActions}
+      />
 
       {error != null && (
         <Alert variant="destructive">
@@ -106,16 +143,33 @@ function JournalPageContent() {
         </Alert>
       )}
 
-      <JournalPostList
-        posts={posts}
-        canUpdate={canUpdate}
-        canDelete={canDelete}
-        onEdit={handleEdit}
-        onDeletePost={(post) => void handleDeletePostFromCard(post)}
-        onDeleteImage={(imageId) => void deleteImage(imageId)}
-        isDeletingPost={isDeletingPost}
-        isDeletingImage={isDeletingImage}
-      />
+      <Tabs
+        value={statusFilter}
+        onValueChange={(value) => {
+          if (value === 'all' || value === 'draft' || value === 'published') {
+            setStatusFilter(value);
+          }
+        }}
+      >
+        <TabsList>
+          <TabsTrigger value="all">All ({statusCounts.all})</TabsTrigger>
+          <TabsTrigger value="published">Published ({statusCounts.published})</TabsTrigger>
+          <TabsTrigger value="draft">Drafts ({statusCounts.drafts})</TabsTrigger>
+        </TabsList>
+        <TabsContent value={statusFilter}>
+          <JournalPostList
+            posts={filteredPosts}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
+            onEdit={handleEdit}
+            onDeletePost={(post) => void handleDeletePostFromCard(post)}
+            onPublish={(post) => void handlePublishFromCard(post)}
+            onDeleteImage={(imageId) => void deleteImage(imageId)}
+            isDeletingPost={isDeletingPost}
+            isDeletingImage={isDeletingImage}
+          />
+        </TabsContent>
+      </Tabs>
 
       <JournalPostEditor
         open={editorOpen}

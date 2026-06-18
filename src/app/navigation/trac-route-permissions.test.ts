@@ -58,9 +58,7 @@ describe('trac-route-permissions', () => {
 
   it('registers all routable page keys as a subset of the canonical catalogue', () => {
     const uniquePageNames = [...new Set(collectAppPageNames())].sort();
-    const routableCanonical = TRAC_CANONICAL_PAGE_NAMES.filter(
-      (pageName) => pageName !== TRAC_PAGE_NAMES.dashboard,
-    ).sort();
+    const routableCanonical = [...TRAC_CANONICAL_PAGE_NAMES].sort();
     expect(uniquePageNames).toEqual(routableCanonical);
   });
 
@@ -101,7 +99,10 @@ describe('trac-route-permissions', () => {
       operation: 'read',
     });
     expect(getTracRoutePermissionForPath('/')).toBeUndefined();
-    expect(getTracRoutePermissionForPath('/dashboard')).toBeUndefined();
+    expect(getTracRoutePermissionForPath('/dashboard')).toEqual({
+      pageName: TRAC_PAGE_NAMES.dashboard,
+      operation: 'read',
+    });
   });
 
   it('attaches permissions to enabled nav items', () => {

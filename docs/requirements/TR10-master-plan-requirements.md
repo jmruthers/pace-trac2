@@ -96,6 +96,7 @@
 - [ ] **Cost summary** section: per-type amounts, per participant, hero cells for total, accommodation, transport.
 - [ ] **Itinerary** section: day blocks with day number + heading; journey-leg rows per entry (time, resource, place).
 - [ ] Print button triggers `window.print()`; print CSS variables for title/event/app name.
+- [ ] Legacy hash `#/events/:code/master-plan` resolves to Itinerary full mode with `MasterPlanDoc` (same as `#/itinerary/full`), not a separate master-plan page shell.
 
 ---
 
@@ -114,10 +115,7 @@ Single scrollable document (`mp-doc`) suitable for print — prototype embeds in
 
 **1. Header band (`mp-header-band`)**
 
-- Event glyph/logo tile.
-- Eyebrow: **Master plan · {event code}**.
-- `h1` event name; muted tagline.
-- KV grid: Dates (range), Organisation, Participants count, Base currency.
+- Horizontal band: `mp-logo` glyph tile, title block (`label-mono` eyebrow, `h1`, muted tagline), `mp-kv` grid (Dates, Organisation, Participants, Base currency).
 
 **2. Journey map (`mp-section`)**
 
@@ -139,11 +137,27 @@ Single scrollable document (`mp-doc`) suitable for print — prototype embeds in
 
 **5. Itinerary**
 
-- Section title **Itinerary** with day count and timezone note.
-- For each day: **Day N** + day heading; `journey-leg` rows mirroring schedule entries (glyph, name + kind, type/place, time).
-- Timezone disclaimer alert near section (architecture) — add in pass 2 if not in prototype block.
+- Section `h2`: **Itinerary** + `span.mp-num` `{dayCount} days · all times {event.timezone}` (prototype inline disclaimer; no separate alert in doc body).
+- For each day: **Day N** + `fmtDayHeading`; `div.journey` of `journey-leg` rows (mode/resource glyph, name + kind, type/place, time).
+- Architecture `Alert` timezone disclaimer is a **pass-2 production addition** when not embedded in itinerary header copy.
 
-### Page chrome when standalone (`MasterPlanPage`)
+### Prototype routing authority
+
+- **Primary surface:** `ItineraryPage` at `#/events/:code/itinerary/full` (`mode === "full"`).
+- **Legacy redirect:** `#/events/:code/master-plan` → same `ItineraryPage` full mode (see `app.jsx` `parseRoute`).
+- `MasterPlanPage` component exists for back-compat export only; prototype app does **not** navigate to it.
+
+### Itinerary-embedded full mode chrome (prototype)
+
+Inside `div.page-body`:
+
+1. `PageHeader` — breadcrumb Events → event code → Itinerary; title **Itinerary**; subtitle printable-document copy; `right`: primary **Print master plan** (`window.print()`)
+2. `div.itin-viewswitch` — three-way `role-toggle` (Planner view | Participant view | **Master plan** active); footer caption **Printable single-document plan**
+3. `MasterPlanDoc` (`div.mp-doc`) — no BackLink, no separate print bar above doc
+
+Master plan mode does **not** hide the view switch; all three toggles remain operable; selecting Planner/Participant navigates back to `#/itinerary` and restores schedule layout. Schedule rows (`itin-day` / `ItinRow`) are **not** rendered in master mode.
+
+### Page chrome when standalone (`MasterPlanPage` — production pass 2 only)
 
 - `BackLink` → itinerary schedule view.
 - Top bar: **Print master plan** primary button (`window.print()`).
@@ -151,8 +165,7 @@ Single scrollable document (`mp-doc`) suitable for print — prototype embeds in
 
 ### Itinerary integration (prototype)
 
-- Itinerary view switch third mode **Master plan** navigates to `#/itinerary/full` and renders `MasterPlanDoc` inline.
-- Header **Print master plan** when in master mode inside `ItineraryPage`.
+- Prototype reference: `MasterPlanDoc` in `pages/MasterPlanPage.jsx`; full-mode host: `pages/ItineraryPage.jsx` (`mode=full`); legacy redirect in `app.jsx`.
 
 ### Print behaviour
 

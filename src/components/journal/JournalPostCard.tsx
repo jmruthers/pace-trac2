@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -16,6 +17,7 @@ interface JournalPostCardProps {
   canDelete: boolean;
   onEdit: (post: JournalPost) => void;
   onDeletePost: (post: JournalPost) => void;
+  onPublish?: (post: JournalPost) => void;
   onDeleteImage: (imageId: string) => void;
   isDeletingPost?: boolean;
   isDeletingImage: boolean;
@@ -27,20 +29,30 @@ export function JournalPostCard({
   canDelete,
   onEdit,
   onDeletePost,
+  onPublish,
   onDeleteImage,
   isDeletingPost = false,
   isDeletingImage,
 }: JournalPostCardProps) {
   const paragraphs = formatJournalContentForDisplay(post.content);
   const images = post.trac_journal_images ?? [];
+  const statusLabel = post.status === 'published' ? 'Published' : 'Draft';
 
   return (
     <article>
       <Card>
         <CardHeader>
           <CardTitle>{post.title}</CardTitle>
-          {(canUpdate || canDelete) && (
+          <Badge variant={post.status === 'published' ? 'solid-main-normal' : 'outline-sec-muted'}>
+            {statusLabel}
+          </Badge>
+          {(canUpdate || canDelete || onPublish != null) && (
             <fieldset className="grid grid-flow-col auto-cols-max justify-end gap-2">
+              {canUpdate && post.status === 'draft' && onPublish != null ? (
+                <Button type="button" variant="outline" onClick={() => onPublish(post)}>
+                  Publish
+                </Button>
+              ) : null}
               {canUpdate && (
                 <Button type="button" variant="outline" onClick={() => onEdit(post)}>
                   Edit
@@ -60,6 +72,10 @@ export function JournalPostCard({
           )}
         </CardHeader>
         <CardContent>
+          <p>
+            {post.status === 'published' ? 'Published' : 'Draft'} ·{' '}
+            {new Date(post.updated_at).toLocaleString()}
+          </p>
           {paragraphs.length === 0 ? (
             <p>No content</p>
           ) : (
@@ -71,7 +87,6 @@ export function JournalPostCard({
             {images.map((image) => (
               <section key={image.id} className="grid gap-2">
                 <JournalImageThumbnail
-                  key={image.id}
                   imageId={image.id}
                   alt={`Attachment for ${post.title}`}
                 />

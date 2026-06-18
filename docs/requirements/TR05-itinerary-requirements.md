@@ -118,10 +118,11 @@ TRAC remains the **business/source authority** for itinerary rules. The executab
 
 - [ ] `PageHeader` title **Itinerary**; subtitle varies by active view mode.
 - [ ] View switch: **Planner view** | **Participant view** | **Master plan** (prototype third mode navigates to `#/itinerary/full` — TR10).
-- [ ] Planner view: day-grouped sections (`fmtDayHeading`); `ItinRow` entries with time column, resource glyph, name, meta lines, status badge on right.
-- [ ] Participant view: info banner + participant `Select`; filtered entries only for assigned resources; assignment notes on rows when present.
-- [ ] Empty day or no entries: `EmptyState` with guidance.
-- [ ] Timezone caption in view switch footer (event timezone + offset).
+- [ ] Planner view: day sections use `itin-day-head` — date badge (`daynum`: day + month abbr), `h3` day heading, **Day {n}** subline, right-aligned **{n} item(s)** count.
+- [ ] Participant view: info alert banner (`itin-pbanner`) with dynamic title **Participant itinerary — {name}**; participant **Viewing as** `Select` lives **inside** the alert (not a separate block above the day list).
+- [ ] `ItinRow`: two-line time column — primary start time; secondary end time **or** accommodation kind (Check-in / Check-out).
+- [ ] Assignment notes render as info badge inside row meta (`it-meta`), not a separate column.
+- [ ] View-switch footer caption: **All times {event.timezone} ({tz_offset})** for schedule modes.
 
 ---
 
@@ -160,16 +161,16 @@ Footer caption: timezone disclaimer for schedule modes; **Printable single-docum
 
 ### Planner schedule layout
 
-- Days as vertical sections with day heading.
-- Each entry (`itin-row`): time stack (start – end), mode/resource glyph, title + kind (check-in/out for accommodation), meta (type, transport number, location lines), `StatusBadge` in side column.
+- Each day: `itin-day` > `itin-day-head` (date badge + heading block + item count) + `itin-rows` stack.
+- `ItinRow` columns: `it-time` (t1/t2 stack) | mode/resource glyph | title + kind + meta lines | `StatusBadge` in `it-side`.
+- Transport meta: **Depart {start} → {end} · arrive {endTime}** pattern when applicable.
 - Empty: `EmptyState` when no scheduled rows.
+- **Prototype schedule simplification:** accommodation appears as separate check-in and check-out rows on their respective days; production day grouping follows CR25 multi-day rules.
 
 ### Participant schedule layout
 
-- Info alert banner explaining filtered personal view.
-- Participant picker (`Select`) above day list — only members with assignments.
-- Same `ItinRow` structure; optional assignment note badge on row.
-- Empty when participant has no assignments.
+- Single info alert row: explanatory copy + **Viewing as** label + `Select` (members with assignments only).
+- Filtered day list uses same `ItinRow` structure; empty copy differs for participant vs planner.
 
 ### Map (pass 2)
 

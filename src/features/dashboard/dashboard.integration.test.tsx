@@ -139,6 +139,18 @@ vi.mock('@/features/dashboard/hooks/useDashboardPlanningCounts', async (importOr
   };
 });
 
+vi.mock('@/features/risks/hooks/use-risks', () => ({
+  useRisks: () => ({
+    risks: [],
+    isLoading: false,
+    error: null,
+    addRisk: vi.fn(),
+    updateRisk: vi.fn(),
+    deleteRisk: vi.fn(),
+    isSaving: false,
+  }),
+}));
+
 import { DashboardPage } from '@/app/pages/DashboardPage';
 
 describe('dashboard integration (TR02)', () => {
@@ -164,16 +176,18 @@ describe('dashboard integration (TR02)', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: 'Summit 2026' })).toBeInTheDocument();
-    expect(screen.getByText('Plan the journey')).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: 'Summit 2026' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Plan the journey').length).toBeGreaterThan(0);
     expect(screen.getByText(/Transport: 1 confirmed of 2/)).toBeInTheDocument();
     expect(screen.getByText(/Visible dates:/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Contacts' })).toBeInTheDocument();
     expect(screen.getByText('3', { selector: 'strong' })).toBeInTheDocument();
     expect(screen.getByText(/Event total:/)).toBeInTheDocument();
 
-    expect(screen.getByRole('link', { name: 'Open planning' })).toHaveAttribute('href', '/planning');
-    expect(screen.getByRole('link', { name: 'Open itinerary' })).toHaveAttribute('href', '/itinerary');
+    expect(screen.getByRole('button', { name: 'Open planning' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View itinerary' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Needs attention' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /logistics to confirm/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open costs' })).toHaveAttribute('href', '/costs');
     expect(screen.getByRole('link', { name: 'Open contacts' })).toHaveAttribute('href', '/contacts');
     expect(screen.getByRole('link', { name: 'Open assignments' })).toHaveAttribute(
@@ -203,7 +217,7 @@ describe('dashboard integration (TR02)', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: 'Summit 2026' })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: 'Summit 2026' }).length).toBeGreaterThan(0);
     expect(errorSpy).toHaveBeenCalled();
     errorSpy.mockRestore();
   });
@@ -225,13 +239,37 @@ describe('dashboard integration (TR02)', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: 'Summit 2026' })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: 'Summit 2026' }).length).toBeGreaterThan(0);
     expect(screen.getByText(/Planning load failed/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Itinerary' })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: 'Itinerary' }).length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', { name: 'Costs' })).toBeInTheDocument();
     expect(screen.getByText(/Visible dates:/)).toBeInTheDocument();
     expect(screen.getByText(/Event total:/)).toBeInTheDocument();
+  });
+
+  it('attention queue: shows empty state when nothing needs action', () => {
+    mockPlanningCounts.mockReturnValue({
+      transport: { confirmed: 2, total: 2 },
+      accommodation: { confirmed: 1, total: 1 },
+      activity: { confirmed: 2, total: 2 },
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { name: 'Needs attention' })).toBeInTheDocument();
+    expect(screen.getByText('Nothing needs attention')).toBeInTheDocument();
+    expect(
+      screen.getByText('You are all caught up — nothing to action right now.')
+    ).toBeInTheDocument();
   });
 
   it('auth / permission failure: user without dashboard read sees denial', () => {

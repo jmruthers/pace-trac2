@@ -291,7 +291,7 @@ describe('JournalPage integration', () => {
       expect(screen.getByText('Camp day one')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: /new entry/i }));
+    await user.click(screen.getByRole('button', { name: /new post/i }));
 
     const dialog = await screen.findByRole('dialog');
     await user.type(within(dialog).getByLabelText(/^title$/i), 'River crossing');
@@ -322,7 +322,7 @@ describe('JournalPage integration', () => {
     renderJournalPage();
     await waitFor(() => expect(screen.getByText('Camp day one')).toBeInTheDocument());
 
-    await user.click(screen.getByRole('button', { name: /new entry/i }));
+    await user.click(screen.getByRole('button', { name: /new post/i }));
     const dialog = await screen.findByRole('dialog');
     await user.type(within(dialog).getByLabelText(/^title$/i), 'Failed upload');
     await user.upload(

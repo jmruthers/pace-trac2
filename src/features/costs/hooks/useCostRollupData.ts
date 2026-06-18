@@ -16,6 +16,14 @@ const APPROVED_STATUS = 'approved';
 
 const LOGISTICS_KINDS: LogisticsResourceKind[] = ['transport', 'accommodation', 'activity'];
 
+/** Per-table columns for cost labels — must match DB schema (transport has no `name`). */
+const LOGISTICS_COST_SELECT: Record<LogisticsResourceKind, string> = {
+  transport:
+    'id, currency, individual_cost, group_cost, departure_display_name, arrival_display_name',
+  accommodation: 'id, currency, individual_cost, group_cost, name, location_display_name',
+  activity: 'id, currency, individual_cost, group_cost, name',
+};
+
 async function fetchLogisticsLines(
   client: NonNullable<ReturnType<typeof asPlanningClient>>,
   eventId: string
@@ -27,7 +35,7 @@ async function fetchLogisticsLines(
         kind === 'transport' ? 'departure_time' : kind === 'accommodation' ? 'check_in_time' : 'start_time';
       const { data, error } = await client
         .from(table)
-        .select('id, currency, individual_cost, group_cost, name, departure_display_name, arrival_display_name')
+        .select(LOGISTICS_COST_SELECT[kind])
         .eq('event_id', eventId)
         .order(orderColumn, { ascending: true });
       if (error) throw new Error(error.message);

@@ -2,15 +2,6 @@ import { useContacts } from '@/features/contacts/hooks/use-contacts';
 import type { Contact } from '@/features/contacts/types';
 import { MasterPlanSectionShell } from '@/features/master-plan/components/MasterPlanSectionShell';
 
-function formatContactLine(contact: Contact): string {
-  const name = [contact.first_name, contact.surname].filter(Boolean).join(' ');
-  const parts = [name];
-  if (contact.role?.trim()) parts.push(contact.role.trim());
-  if (contact.phone_number?.trim()) parts.push(contact.phone_number.trim());
-  if (contact.email_address?.trim()) parts.push(contact.email_address.trim());
-  return parts.join(' · ');
-}
-
 export function MasterPlanContactsList() {
   const { contacts, isLoading, error } = useContacts();
 
@@ -18,7 +9,7 @@ export function MasterPlanContactsList() {
 
   return (
     <MasterPlanSectionShell
-      title="Contacts"
+      title={`Contacts (${contacts.length})`}
       isLoading={isLoading}
       isError={error != null}
       error={errorMessage}
@@ -27,11 +18,26 @@ export function MasterPlanContactsList() {
       {contacts.length === 0 ? (
         <p>No contacts recorded for this event yet.</p>
       ) : (
-        <ul>
-          {contacts.map((contact) => (
-            <li key={contact.id}>{formatContactLine(contact)}</li>
-          ))}
-        </ul>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Phone</th>
+              <th>Email</th>
+            </tr>
+          </thead>
+          <tbody>
+            {contacts.map((contact: Contact) => (
+              <tr key={contact.id}>
+                <td>{[contact.first_name, contact.surname].filter(Boolean).join(' ')}</td>
+                <td>{contact.role ?? '—'}</td>
+                <td>{contact.phone_number ?? '—'}</td>
+                <td>{contact.email_address ?? '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </MasterPlanSectionShell>
   );

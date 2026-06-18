@@ -1,23 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import {
   getEnabledTracNavItems,
+  getTracLandingNavItems,
+  getTracNavigationItemsForShell,
   SLICE_01_REGISTERED_ROUTE_PATHS,
   TRAC_PRIMARY_NAV_DEFINITIONS,
 } from '@/app/navigation/trac-nav';
 
 describe('trac-nav', () => {
-  it('defines primary nav in IA order', () => {
+  it('defines primary nav in IA order (max five items)', () => {
     const labels = TRAC_PRIMARY_NAV_DEFINITIONS.map((item) => item.label);
-    expect(labels).toEqual([
-      'Planning',
-      'Assignments',
-      'Itinerary',
-      'Contacts',
-      'Costs',
-      'Journal',
-      'Master Plan',
-      'Risks',
-    ]);
+    expect(labels).toEqual(['Overview', 'Planning', 'Itinerary', 'Risks']);
+    expect(TRAC_PRIMARY_NAV_DEFINITIONS.length).toBeLessThanOrEqual(5);
   });
 
   it('enables nav links only for registered route paths', () => {
@@ -31,15 +25,20 @@ describe('trac-nav', () => {
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/masterplan')).toBe(true);
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/currency-rates')).toBe(false);
     const labels = getEnabledTracNavItems().map((item) => item.label);
-    expect(labels).toEqual([
-      'Planning',
-      'Assignments',
-      'Itinerary',
-      'Contacts',
-      'Costs',
-      'Journal',
-      'Master Plan',
-      'Risks',
-    ]);
+    expect(labels).toEqual(['Overview', 'Planning', 'Itinerary', 'Risks']);
+  });
+
+  it('shows landing nav when no event is selected', () => {
+    const labels = getTracNavigationItemsForShell(false).map((item) => item.label);
+    expect(labels).toEqual(['Events']);
+  });
+
+  it('shows lifecycle nav when an event is selected', () => {
+    const labels = getTracNavigationItemsForShell(true).map((item) => item.label);
+    expect(labels).toEqual(['Overview', 'Planning', 'Itinerary', 'Risks']);
+  });
+
+  it('landing nav item points to authenticated home', () => {
+    expect(getTracLandingNavItems()[0]?.href).toBe('/');
   });
 });

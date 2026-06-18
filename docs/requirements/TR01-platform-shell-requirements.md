@@ -102,7 +102,7 @@ This slice does not own `trac_*` domain tables but **must** load RBAC/page metad
 - [ ] Public `/login` renders without authenticated header, footer, or primary nav (prototype: `PaceLoginPage` only).
 - [ ] Authenticated routes render vertical stack: header → main outlet → footer inside the shell (prototype: `PaceHeader` → `page-body` → `PaceFooter`).
 - [ ] Authenticated home at `/` shows the event landing pattern: `PageHeader`, `EventTile` grid with show-more toggle, optional cross-event `AttentionQueue` (prototype `TracLandingPage`).
-- [ ] Primary nav shows **Events** only when no event is in context; when an event is active, nav lists **Overview**, **Planning**, **Itinerary**, **Risks** (prototype `navItemsForRoute`).
+- [ ] Primary nav shows **Events** only when no event is in context; when an event is active, nav lists **Overview**, **Planning**, **Itinerary**, and **Risks** (max five primary items per CR05c; prototype `navItemsForRoute`). Additional routes (Assignments, Contacts, Costs, Journal, Master Plan) are deep-link only — reached from the event overview launcher grid.
 - [ ] Header includes AppSwitcher for TRAC, org context selector, event context, user menu with **All events** back to home (prototype `PaceHeader`).
 - [ ] Unknown authenticated paths show NotFound with 404 glyph, explanatory copy, and primary **Back to events** action to `/` (prototype `notFound`).
 - [ ] Invalid event code in URL shows event-not-found surface with same structure and CTA (prototype `eventNotFound`).
@@ -164,7 +164,7 @@ Vertical region stack (prototype → pace-core targets):
    - AppSwitcher (`app="trac"`).
    - Organisation context selector (prototype shows org list; selecting org returns to home).
    - Event context selector when event-scoped routes are active (production: `showEvents` on `PaceAppLayout`).
-   - Primary nav strip (items depend on landing vs event context — see Navigation).
+   - Primary nav strip at `lg+` as inline pills; compact Select below `lg` (items depend on landing vs event context — see Navigation).
    - User menu: **All events** → home; optional **Event settings** stub in prototype.
 2. **Main** — `PaceMain` / prototype `page-body`: lazy `<Outlet />` for slice pages.
 3. **Footer** — `PaceFooter` at shell bottom.
@@ -194,9 +194,9 @@ Shell-owned pre-event home (not TR02 dashboard cards):
 | No event in route (`#/`) | Single item **Events** → `/` |
 | Event active (`#/events/:code/…`) | **Overview**, **Planning**, **Itinerary**, **Risks** |
 
-Contacts, Journal, Costs, and Master plan are **not** primary nav items in the prototype; they are reached from the event overview launcher grid ([TR02](./TR02-dashboard-requirements.md)).
+Contacts, Journal, Costs, Assignments, and Master plan are **not** primary nav items in the prototype; they are reached from the event overview launcher grid ([TR02](./TR02-dashboard-requirements.md)). Primary nav MUST NOT exceed five items (CR05c).
 
-Nav items must respect RBAC permission wiring (`enforcePermissions` / `routePermissions` on `PaceAppLayout`).
+Nav items must respect RBAC permission wiring (`enforcePermissions` / `routeAccessDenied` on `PaceAppLayout`; per-item `pageId` gating in `NavigationMenu`).
 
 ### Error and fallback surfaces
 
@@ -221,7 +221,7 @@ Nav items must respect RBAC permission wiring (`enforcePermissions` / `routePerm
 - Prototype routes embed event code in URL (`#/events/:code/*`); production uses flat paths with header event selector.
 - Prototype full-page event picker at `/` vs production header selector + `TracNoEventFallback` + event dashboard at `/` when event selected.
 - Prototype primary nav is **four items** with **Overview** label; architecture v1 primary nav is **eight items** (Planning through Risks) with dashboard reached via `/` only — align nav in pass 2 per product choice or update architecture first.
-- Prototype org selector in header; production may hide organisations (`showOrganisations: false`) and rely on event selector only.
+- **ContextSelector modes** (aligned with GEAR GR01): on `/`, `showOrganisations` true and `showEvents` false (organisation in trigger; events via landing tiles); on event-scoped routes, both true (event name in trigger).
 - Prototype `PaceHeader`; production uses `PaceAppLayout` (already wired in `authenticated-routes.tsx`).
 - Prototype Tweaks panel is prototype-only; not a rebuild requirement.
 

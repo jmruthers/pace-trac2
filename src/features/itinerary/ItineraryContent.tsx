@@ -1,6 +1,16 @@
 import { useMemo, useState } from 'react';
-import { Alert, LoadingSpinner, Tabs, TabsContent, TabsList, TabsTrigger } from '@solvera/pace-core/components';
+import { Link } from 'react-router-dom';
+import {
+  Alert,
+  LoadingSpinner,
+  PageHeader,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@solvera/pace-core/components';
 import { usePaceMain } from '@solvera/pace-core/hooks';
+import { useTracEventBreadcrumbs } from '@/app/shell/use-trac-event-breadcrumbs';
 import { collectMapData } from '@/features/itinerary/collect-map-points';
 import { ItineraryDayTimeline } from '@/features/itinerary/components/ItineraryDayTimeline';
 import { ItineraryDayVisitorState } from '@/features/itinerary/components/ItineraryDayVisitorState';
@@ -13,6 +23,7 @@ import {
 
 export function ItineraryContent() {
   usePaceMain({ printTitle: 'Itinerary' });
+  const breadcrumbItems = useTracEventBreadcrumbs('Itinerary');
 
   const [activeTab, setActiveTab] = useState<ItineraryViewTab>('event');
   const { audience, model, isLoading, isError, error } = useItineraryViewModel(activeTab);
@@ -22,10 +33,19 @@ export function ItineraryContent() {
 
   const sectionTitle = participantView ? 'Your itinerary' : 'Event itinerary';
 
+  const subtitle =
+    audience.mode === 'dual'
+      ? 'Planner view, participant view, or open the master plan for printing.'
+      : participantView
+        ? 'Your assigned transport, accommodation, and activities for this event.'
+        : 'Time-ordered schedule for transport, accommodation, and activities.';
+
   const mapData = useMemo(() => {
     if (!model) return { points: [], transportLegs: [] };
     return collectMapData(model.dayGroups, model.displayByResourceKey);
   }, [model]);
+
+  const headerActions = <Link to="/masterplan">Master plan</Link>;
 
   if (isLoading) {
     return (
@@ -45,23 +65,21 @@ export function ItineraryContent() {
 
   if (audience.mode === 'day_visitor') {
     return (
-      <>
-        <h1>Itinerary</h1>
+      <section className="grid gap-4">
+        <PageHeader breadcrumbItems={breadcrumbItems} title="Itinerary" subtitle={subtitle} />
         <ItineraryDayVisitorState />
-      </>
+      </section>
     );
   }
 
   return (
-    <>
-      <h1>Itinerary</h1>
-      <p>
-        {audience.mode === 'dual'
-          ? 'View the full event schedule or your assigned logistics for this event.'
-          : participantView
-            ? 'Your assigned transport, accommodation, and activities for this event.'
-            : 'Time-ordered schedule for transport, accommodation, and activities.'}
-      </p>
+    <section className="grid gap-4">
+      <PageHeader
+        breadcrumbItems={breadcrumbItems}
+        title="Itinerary"
+        subtitle={subtitle}
+        actions={headerActions}
+      />
 
       <ItineraryTimezoneNotice />
 
@@ -89,8 +107,8 @@ export function ItineraryContent() {
           }}
         >
           <TabsList>
-            <TabsTrigger value="event">Event itinerary</TabsTrigger>
-            <TabsTrigger value="personal">Your itinerary</TabsTrigger>
+            <TabsTrigger value="event">Planner view</TabsTrigger>
+            <TabsTrigger value="personal">Participant view</TabsTrigger>
           </TabsList>
           <TabsContent value="event">
             <ItineraryPanels
@@ -120,7 +138,7 @@ export function ItineraryContent() {
           sectionTitle={sectionTitle}
         />
       )}
-    </>
+    </section>
   );
 }
 

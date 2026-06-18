@@ -29,6 +29,30 @@ vi.mock('@solvera/pace-core/hooks', async (importOriginal) => {
   };
 });
 
+vi.mock('@/features/planning/hooks/useLogisticsList', () => ({
+  useTransportList: () => ({
+    items: [],
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+  useAccommodationList: () => ({
+    items: [],
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+  useActivityList: () => ({
+    items: [],
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}));
+
 vi.mock('@/features/planning/context/GoogleMapsPlanningContext', () => ({
   GoogleMapsPlanningProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useGoogleMapsPlanning: () => ({
@@ -73,9 +97,9 @@ describe('PlanningPage', () => {
 
   it('renders transport, accommodation, and activity tabs', () => {
     renderPlanningPage();
-    expect(screen.getByRole('tab', { name: 'Transport' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Accommodation' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Activity' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Transport/ })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Accommodation/ })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Activity/ })).toBeInTheDocument();
     expect(screen.getByText('Transport list mock')).toBeInTheDocument();
   });
 });

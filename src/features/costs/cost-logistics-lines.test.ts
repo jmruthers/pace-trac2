@@ -21,6 +21,21 @@ describe('cost-logistics-lines (TR07)', () => {
     expect(line.currency).toBe('AUD');
   });
 
+  it('uses accommodation location when name missing', () => {
+    const line = toCostLogisticsLine(
+      {
+        id: 'h1',
+        location_display_name: 'Harbour Hotel',
+        currency: 'AUD',
+        individual_cost: 200,
+        group_cost: 0,
+      },
+      'accommodation'
+    );
+
+    expect(line.label).toBe('Harbour Hotel');
+  });
+
   it('uses activity name when present', () => {
     const line = toCostLogisticsLine(
       {

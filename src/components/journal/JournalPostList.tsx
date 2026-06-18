@@ -7,6 +7,7 @@ interface JournalPostListProps {
   canDelete: boolean;
   onEdit: (post: JournalPost) => void;
   onDeletePost: (post: JournalPost) => void;
+  onPublish?: (post: JournalPost) => void;
   onDeleteImage: (imageId: string) => void;
   isDeletingPost?: boolean;
   isDeletingImage: boolean;
@@ -18,6 +19,7 @@ export function JournalPostList({
   canDelete,
   onEdit,
   onDeletePost,
+  onPublish,
   onDeleteImage,
   isDeletingPost = false,
   isDeletingImage,
@@ -40,6 +42,7 @@ export function JournalPostList({
           canDelete={canDelete}
           onEdit={onEdit}
           onDeletePost={onDeletePost}
+          onPublish={onPublish}
           onDeleteImage={onDeleteImage}
           isDeletingPost={isDeletingPost}
           isDeletingImage={isDeletingImage}

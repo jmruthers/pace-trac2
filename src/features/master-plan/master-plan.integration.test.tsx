@@ -198,6 +198,14 @@ vi.mock('@/features/costs/hooks/useCostRollupData', () => ({
   useCostRollupData: () => mockUseCostRollupData(),
 }));
 
+vi.mock('@/features/costs/hooks/useBaseCurrency', () => ({
+  useBaseCurrency: () => ({
+    baseCurrency: 'USD',
+    isLoading: false,
+    error: null,
+  }),
+}));
+
 vi.mock('@/features/contacts/hooks/use-contacts', () => ({
   useContacts: () => ({
     contacts: mockContacts,
@@ -293,10 +301,10 @@ describe('master plan integration (TR10)', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: 'Master Plan' })).toBeInTheDocument();
-    expect(screen.getByText('Summer Tour')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Summer Tour' })).toBeInTheDocument();
+    expect(screen.getByText(/Master plan ·/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Journey map' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Contacts' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Contacts/ })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Costs' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Manage currency rates' })).not.toBeInTheDocument();
     expect(screen.getByText(/Event cost summary for 2 approved participants/)).toBeInTheDocument();
@@ -305,7 +313,7 @@ describe('master plan integration (TR10)', () => {
     expect(
       screen.getByText(/Schedule days use timezone snapshots saved on each logistics row/)
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Print' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Print master plan' })).toBeInTheDocument();
   });
 
   it('validation / domain failure: costs error does not suppress other sections', () => {
@@ -325,7 +333,7 @@ describe('master plan integration (TR10)', () => {
     );
 
     expect(screen.getByText('Costs unavailable')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Contacts' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Contacts/ })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Detailed itinerary' })).toBeInTheDocument();
   });
 

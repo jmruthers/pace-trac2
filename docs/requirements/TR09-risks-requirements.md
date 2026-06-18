@@ -93,7 +93,9 @@ Legacy allowed manual impact fields in some flows — **rebuild forbids** writin
 - [ ] Status filter tabs (All + each risk status) with counts.
 - [ ] `DataTable`: risk description link, when badge, before/after impact chips, responsible contact, status badge; row activate opens item page.
 - [ ] New risk: full page with `RiskFields` sections (before controls, controls & response, after controls) and read-only `ImpactReadout` blocks.
-- [ ] Item page: same field grid with `PageSaveBar`; delete confirmation.
+- [ ] **Risk item page:** no `BackLink` (breadcrumb-only); `PageHeader` title = risk description; subtitle `{type} · {when} the event`; header status badge + **Delete**.
+- [ ] **Risk item page:** section card includes **Details** head + edit hint (new page has body only, no head).
+- [ ] **Risk matrix:** corner axis label **L ↓ / C →**; section label **Residual risk matrix** above grid.
 
 ---
 
@@ -111,8 +113,11 @@ Legacy allowed manual impact fields in some flows — **rebuild forbids** writin
 
 - `PageHeader`: breadcrumb; title **Risk register**; subtitle explains generated impact; actions **Print** + **Add risk**.
 - **Residual risk matrix** (`RiskMatrix`) in top `Card`:
-  - 5×5 grid: likelihood rows × consequence columns; cell shows count of risks at residual position; colour band by impact score; axis labels with ranks.
+  - Section label **Residual risk matrix** above grid.
+  - 5×5 grid: likelihood rows × consequence columns; corner cell **L ↓ / C →**; cell shows count of risks at residual position; colour band by impact score; empty cells use `is-empty` styling; axis labels with ranks.
   - Footnote explaining residual (after-control) positioning.
+  - Print prep: set `--print-title`, `--print-event-name`, and `--print-app-name` on `documentElement`.
+  - Default table sort: **After** (residual impact) descending.
 - **Status tabs:** All + each `RISK_STATUSES` value with count.
 - **DataTable:**
   - Risk column: linked description + type subline.
@@ -130,15 +135,20 @@ Legacy allowed manual impact fields in some flows — **rebuild forbids** writin
 - `PageHeader`: **Add risk**.
 - Section card with `RiskFields` grid:
   - Type, when, description.
-  - **Before controls:** likelihood + consequence selects; **ImpactReadout** (read-only, lock icon).
+  - **Before controls (inherent risk):** likelihood + consequence selects; **ImpactReadout** (read-only, lock icon) — large `ImpactChip` + label + calc line `{likelihood} ({rank}) × {consequence} ({rank})` + **Generated · read-only** footnote.
   - **Controls & response:** control measures, residual response, responsible contact select, status, comment.
-  - **After controls:** likelihood + consequence; second **ImpactReadout**.
+  - **After controls (residual risk):** likelihood + consequence; second **ImpactReadout**.
 - `PageSaveBar`: Cancel + **Create risk** (submit).
 
 ### Risk item (full-page — `#/events/:code/risks/:riskId`)
 
-- Same `RiskFields` layout; `PageSaveBar` when dirty; delete with confirmation.
-- Not-found pattern if id missing.
+- **No** `BackLink` (contrast with new-risk page).
+- `PageHeader`: title = risk description text; subtitle `{type} · {when} the event`; right: status `Badge` (dot + tone) + **Delete**.
+- Section card with `section-card-head`: **Details** + save-on-footer hint; `RiskFields` in body.
+- `PageSaveBar` only when dirty: **Discard changes** + **Save** (submit).
+- Delete via `ConfirmationDialog`; not-found 404 pattern.
+
+**Prototype reference:** `RisksPage` (`#/events/:code/risks`), `RiskNewPage` (`…/risks/new`), `RiskItemPage` (`…/risks/:riskId`) — all in `pages/RisksPage.jsx`.
 
 ### Implementation delta (pass 2)
 

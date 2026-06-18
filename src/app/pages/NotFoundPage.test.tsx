@@ -26,7 +26,7 @@ describe('NotFoundPage', () => {
     );
 
     expect(screen.getByText('Page not found')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /go to home/i }));
+    await user.click(screen.getByRole('button', { name: /back to events/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/');
   });
 });

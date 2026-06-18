@@ -11,7 +11,12 @@ function pickLabel(row: Record<string, unknown>, kind: LogisticsResourceKind): s
   if (typeof row.name === 'string' && row.name.trim() !== '') {
     return row.name.trim();
   }
-  if (kind === 'accommodation') return 'Accommodation';
+  if (kind === 'accommodation') {
+    const location =
+      typeof row.location_display_name === 'string' ? row.location_display_name.trim() : '';
+    if (location !== '') return location;
+    return 'Accommodation';
+  }
   return 'Activity';
 }
 

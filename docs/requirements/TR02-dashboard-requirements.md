@@ -25,7 +25,7 @@
 
 Deliver the **event dashboard** at `/` and `/dashboard`: summary cards that reflect the **explicit v1 dashboard contract** in `trac-architecture.md` — planning counts, itinerary date range, costs, contacts, and lightweight assignments navigation — while using **pace-core2** UI and **`trac_status`** (not free-text status strings). Dashboard is **not** a primary nav item; users reach it via `/`.
 
-- Prototype reference: event overview hero, KPI row, attention queue, and launcher grid in `pace-prototype/apps/pace-trac/pages/OverviewPage.jsx` (`EventOverviewPage` via `EventOverview` composite).
+- Prototype reference: event overview hero, KPI row, attention queue, and launcher grid in `pace-prototype/apps/pace-trac/pages/OverviewPage.jsx` (`EventOverviewPage` via `EventOverview` composite in `apps/_pace-core/prototype-only/EventOverview.jsx`; attention in `AttentionQueue.jsx`).
 
 ---
 
@@ -94,7 +94,7 @@ Deliver the **event dashboard** at `/` and `/dashboard`: summary cards that refl
 - [ ] `EventOverview` shell: breadcrumb Events → event name; page title = event name; subtitle on trip logistics scope.
 - [ ] **Hero** region: `HeroLogo`, event title, meta rows (dates, venue, participant count), description, primary **Open planning** + secondary **View itinerary** actions.
 - [ ] **KPI row** (four tiles): planning confirmed/total, itinerary day span, total event cost + per participant, open risks count (warm when > 0).
-- [ ] **AttentionQueue** when actionable items exist (unconfirmed logistics, open risks) with deep links.
+- [ ] **AttentionQueue** always rendered: heading **Needs attention** + count; warn-tone items when actionable; compact `EmptyState` in `Card` when caught up (**Nothing needs attention**).
 - [ ] **Additional information** section: launcher grid (Contacts, Cost summary, Journal) with icon, title, description, optional count badge.
 
 ---
@@ -113,6 +113,24 @@ Deliver the **event dashboard** at `/` and `/dashboard`: summary cards that refl
 ### Event overview layout (prototype `EventOverviewPage`)
 
 Prototype maps event overview to `#/events/:code` (nav label **Overview**). Production serves equivalent content at `/` and `/dashboard` per architecture.
+
+### Prototype layout authority (pass 1)
+
+The event overview does **not** render separate Planning / Itinerary / Costs / Contacts summary cards in the launcher region. Those domains surface via:
+
+- **Hero actions:** Open planning, View itinerary
+- **KPI row:** planning confirmed/total, itinerary span, total cost, open risks
+- **Launchers (3):** External contacts, Cost summary, Journal
+
+Architecture composite cards and `/assignments` link are **pass-2 production options** under Implementation delta — not prototype layout requirements.
+
+**Region order (fixed scaffold inside `page-body`):**
+
+1. `PageHeader` — breadcrumb, title, subtitle
+2. `EntityHero` — `entity-hero` (media | body | `entity-hero-cta` actions)
+3. KPI band — `section.section-gap-sm` > `div.kpi-grid` (four `KPI` tiles)
+4. `AttentionQueue` — always present (see below)
+5. **Additional information** — `section.section-gap` > `section-head` > `h2` + `div.launcher-grid`
 
 **Page chrome (`EventOverview`):**
 
@@ -137,12 +155,15 @@ Prototype maps event overview to `#/events/:code` (nav label **Overview**). Prod
 
 **Attention queue (`AttentionQueue`):**
 
-- Warn-tone items for: logistics rows not yet confirmed (links to planning); open risks (links to risks).
-- Omit section when no items.
+- Always render the section (do not omit when `items` is empty).
+- Section head: `h2` **Needs attention** + count badge (`{n} item(s)`).
+- When `items.length > 0`: warn-tone `atn-list` rows — icon, **title** + **kind** chip (e.g. Planning, Risks), **sub** line, trailing arrow; row navigates on click.
+- When empty: `Card` wrapping compact `EmptyState` — title **Nothing needs attention**, description **You are all caught up — nothing to action right now.**
+- Prototype item copy: **Logistics to confirm** (Planning) → planning; **Open risks** (Risks) → risks.
 
 **Launcher grid (`launcher-grid`):**
 
-Section heading **Additional information**; navigational cards (button cards, not primary nav):
+Section heading **Additional information**; navigational cards (`button.launcher-card`):
 
 | Launcher | Icon | Routes to |
 |----------|------|-----------|
@@ -150,7 +171,7 @@ Section heading **Additional information**; navigational cards (button cards, no
 | Cost summary | wallet | `/costs` |
 | Journal | book | `/journal` |
 
-Each card: icon, title, description, optional count (contacts, journal posts).
+Each card: `div.top` with `launcher-icon`, `h3` title, optional `launcher-count` (contacts, journal posts; costs launcher has no count); `p` description. Exactly three launchers in prototype (no planning/itinerary/risks/assignments tiles here).
 
 ### Architecture v1 dashboard cards (pass 2 alignment)
 

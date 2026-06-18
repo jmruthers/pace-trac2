@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { Alert, Card, DataTable, type DataTableColumn } from '@solvera/pace-core/components';
+import { Alert, Card, DataTable, PageHeader, type DataTableColumn } from '@solvera/pace-core/components';
 import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
+import { useTracEventBreadcrumbs } from '@/app/shell/use-trac-event-breadcrumbs';
 import { parseContactFormData } from '@/features/contacts/contact-schema';
 import { useContacts } from '@/features/contacts/hooks/use-contacts';
 import type { Contact, ContactFormData } from '@/features/contacts/types';
@@ -16,6 +17,7 @@ function toFormInput(data: Partial<Contact>): ContactFormData {
 }
 
 export function ContactsContent() {
+  const breadcrumbItems = useTracEventBreadcrumbs('Contacts');
   const { contacts, isLoading, error, refreshContacts, addContact, updateContact, deleteContact } =
     useContacts();
 
@@ -84,42 +86,40 @@ export function ContactsContent() {
   );
 
   return (
-    <main>
-      <section>
-        <h1>Contacts</h1>
-        <p>
-          Manage key contacts for this event, including emergency contacts, tour guides, and
-          accommodation providers.
-        </p>
-        {error != null ? (
-          <Alert variant="destructive" role="alert">
-            <p>{error}</p>
-          </Alert>
-        ) : null}
-        {!isLoading && error == null && contacts.length === 0 ? (
-          <p>No contacts yet for this event. Use Create in the table below to add one.</p>
-        ) : null}
-        <Card>
-          <DataTable
-            data={contacts}
-            columns={columns}
-            rbac={{ pageName: TRAC_PAGE_NAMES.contacts }}
-            features={{
-              search: true,
-              pagination: true,
-              sorting: true,
-              creation: true,
-              editing: true,
-              deletion: true,
-            }}
-            onCreateRow={handleCreateRow}
-            onEditRow={handleEditRow}
-            onDeleteRow={handleDeleteRow}
-            isLoading={isLoading}
-            getRowId={(row) => String((row as Contact).id)}
-          />
-        </Card>
-      </section>
+    <main className="grid gap-4">
+      <PageHeader
+        breadcrumbItems={breadcrumbItems}
+        title="Contacts"
+        subtitle="Manage key contacts for this event, including emergency contacts, tour guides, and accommodation providers."
+      />
+      {error != null ? (
+        <Alert variant="destructive" role="alert">
+          <p>{error}</p>
+        </Alert>
+      ) : null}
+      {!isLoading && error == null && contacts.length === 0 ? (
+        <p>No contacts yet for this event. Use Create in the table below to add one.</p>
+      ) : null}
+      <Card>
+        <DataTable
+          data={contacts}
+          columns={columns}
+          rbac={{ pageName: TRAC_PAGE_NAMES.contacts }}
+          features={{
+            search: true,
+            pagination: true,
+            sorting: true,
+            creation: true,
+            editing: true,
+            deletion: true,
+          }}
+          onCreateRow={handleCreateRow}
+          onEditRow={handleEditRow}
+          onDeleteRow={handleDeleteRow}
+          isLoading={isLoading}
+          getRowId={(row) => String((row as Contact).id)}
+        />
+      </Card>
     </main>
   );
 }

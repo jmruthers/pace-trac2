@@ -142,7 +142,7 @@ App source of truth for route → `pageName`: `src/app/navigation/trac-nav-defin
 | `/masterplan` | `masterplan` | Printable-style operational summary | SLICE-10 |
 | `*` | — | NotFound (within authenticated shell) | SLICE-01 |
 
-**Primary navigation (order):** Planning → **Assignments** → Itinerary → Contacts → Costs → Journal → Master Plan → Risks. **Dashboard is not a primary nav item** — users reach it via **`/`** (and `/dashboard` alias). `/currency-rates` is a dedicated RBAC-controlled management page and is not required as a primary nav item in v1. Legacy had no `/assignments` URL; this is a **rebuild addition** to split slice scope.
+**Primary navigation (max five items per CR05c):** Overview (`/dashboard`), Planning, Itinerary, Risks — inline at `lg+` via pace-core `NavigationMenu`. Assignments, Contacts, Costs, Journal, and Master Plan are **deep-link routes** (event overview launcher / hubs), not primary nav items. `/currency-rates` is RBAC-controlled management and is not in primary nav. Landing context shows a single **Events** item when no event is selected.
 
 **Deferred / not in v1 IA:** Separate participant-only **TRAC** URL (e.g. `/my-itinerary`) — use **role-based content** on `/itinerary` unless product later splits routes. A **portal-hosted** member route that consumes the same participant itinerary contract is allowed and does **not** count as a TRAC IA change.
 

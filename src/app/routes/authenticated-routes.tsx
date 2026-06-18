@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
-import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import {
-  ProtectedRoute,
   PaceAppLayout,
   LoadingSpinner,
   Dialog,
@@ -12,20 +11,19 @@ import {
   DialogBody,
   PasswordChangeForm,
 } from '@solvera/pace-core/components';
-import { useContextTheme } from '@solvera/pace-core/hooks';
+import { useContextTheme, useOptionalEvents } from '@solvera/pace-core/hooks';
 import { useUnifiedAuthContext } from '@solvera/pace-core';
 import { AccessDenied, usePageCan } from '@solvera/pace-core/rbac';
 import { APP_NAME } from '@/app-config';
-import { getEnabledTracNavItems } from '@/app/navigation/trac-nav';
-import {
-  getTracRoutePermissionForPath,
-  TRAC_ROUTE_PERMISSIONS,
-} from '@/app/navigation/trac-route-permissions';
+import { getTracNavigationItemsForShell } from '@/app/navigation/trac-nav';
+import { getTracRoutePermissionForPath } from '@/app/navigation/trac-route-permissions';
 import {
   LEGACY_USER_DASHBOARD_PATH,
+  TRAC_AUTHENTICATED_HOME_PATH,
   resolveUserDashboardRedirectTarget,
 } from '@/app/routes/route-redirects';
 import { DashboardPage } from '@/app/pages/DashboardPage';
+import { TracEventsLandingPage } from '@/app/pages/landing/TracEventsLandingPage';
 import { ContactsPage } from '@/app/pages/ContactsPage';
 import { JournalPage } from '@/app/pages/JournalPage';
 import { AssignmentsPage } from '@/app/pages/AssignmentsPage';
@@ -36,7 +34,6 @@ import { CostsPage } from '@/app/pages/CostsPage';
 import { MasterPlanPage } from '@/app/pages/MasterPlanPage';
 import { CurrencyRatesPage } from '@/app/pages/CurrencyRatesPage';
 import { NotFoundPage } from '@/app/pages/NotFoundPage';
-import { TracNoEventFallback } from '@/app/shell/TracNoEventFallback';
 
 function getUserDisplayName(user: {
   email?: string;
@@ -71,13 +68,37 @@ function useTracShellRouteAccessDenied(): boolean {
   return !can;
 }
 
+function EventScopedOutlet() {
+  const { selectedEvent, isLoading } = useOptionalEvents();
+
+  if (isLoading) {
+    return (
+      <section className="grid min-h-[50vh] place-items-center px-4" aria-busy="true">
+        <LoadingSpinner label="Loading event context…" />
+      </section>
+    );
+  }
+
+  if (selectedEvent == null) {
+    return <Navigate to={TRAC_AUTHENTICATED_HOME_PATH} replace />;
+  }
+
+  return <Outlet />;
+}
+
 function AuthenticatedShellLayout() {
   useContextTheme();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
   const routeAccessDenied = useTracShellRouteAccessDenied();
+  const { selectedEvent, setSelectedEvent } = useOptionalEvents();
   const { user, signOut, updatePassword } = useUnifiedAuthContext();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const userDisplayName = getUserDisplayName(user);
   const userEmail = user?.email?.trim() ?? '';
+  const hasSelectedEvent = selectedEvent != null;
+  const showEventsInContextSelector = pathname !== TRAC_AUTHENTICATED_HOME_PATH;
+  const navItems = getTracNavigationItemsForShell(hasSelectedEvent);
 
   const handleUserMenuSignOut = useCallback(() => {
     void signOut();
@@ -102,6 +123,11 @@ function AuthenticatedShellLayout() {
     [updatePassword]
   );
 
+  const handleAllEventsSelect = useCallback(() => {
+    setSelectedEvent(null);
+    navigate(TRAC_AUTHENTICATED_HOME_PATH);
+  }, [navigate, setSelectedEvent]);
+
   const homePath = resolveUserDashboardRedirectTarget();
 
   return (
@@ -112,15 +138,21 @@ function AuthenticatedShellLayout() {
         userEmail={userEmail}
         onUserMenuSignOut={handleUserMenuSignOut}
         onUserMenuChangePassword={handleOpenChangePassword}
-        navItems={getEnabledTracNavItems()}
+        navItems={navItems}
         logoHref={homePath}
         showContextSelector
-        showOrganisations={false}
-        showEvents
+        showOrganisations
+        showEvents={showEventsInContextSelector}
         enforcePermissions
-        routePermissions={TRAC_ROUTE_PERMISSIONS}
         routeAccessDenied={routeAccessDenied}
         permissionFallback={<AccessDenied />}
+        extraMenuActions={[
+          {
+            id: 'all-events',
+            label: 'All events',
+            onSelect: handleAllEventsSelect,
+          },
+        ]}
       >
         <Outlet />
       </PaceAppLayout>
@@ -149,24 +181,13 @@ export function AuthenticatedRoutes() {
 
   return (
     <Routes>
-      <Route
-        path="/"
-        element={<AuthenticatedShellLayout />}
-      >
+      <Route path="/" element={<AuthenticatedShellLayout />}>
         <Route
           path={LEGACY_USER_DASHBOARD_PATH.slice(1)}
           element={<Navigate to={homePath} replace />}
         />
-        <Route
-          element={
-            <ProtectedRoute
-              requireEvent
-              noEventsFallback={<TracNoEventFallback />}
-              loadingFallback={<LoadingSpinner />}
-            />
-          }
-        >
-          <Route index element={<DashboardPage />} />
+        <Route index element={<TracEventsLandingPage />} />
+        <Route element={<EventScopedOutlet />}>
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="planning" element={<PlanningPage />} />
           <Route path="assignments" element={<AssignmentsPage />} />
