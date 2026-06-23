@@ -16,5 +16,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - run: npm audit --audit-level=moderate
       - run: npm run validate
