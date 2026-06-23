@@ -115,9 +115,22 @@ describe('TracEventsLandingPage', () => {
     renderLandingPage();
 
     expect(await screen.findByRole('heading', { name: 'Choose an event' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Event 1', level: 3 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Event 4', level: 3 })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Event 5', level: 3 })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Event 1', level: 5 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Event 4', level: 5 })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Event 5', level: 5 })).not.toBeInTheDocument();
+  });
+
+  it('places event tiles in a CardGrid directory section', async () => {
+    renderLandingPage();
+
+    await screen.findByRole('heading', { name: 'Choose an event' });
+    const tileHeading = screen.getByRole('heading', { name: 'Event 1', level: 5 });
+    const tileButton = tileHeading.closest('[role="button"]');
+    expect(tileButton).not.toBeNull();
+
+    const cardGrid = tileButton!.closest('section.grid');
+    expect(cardGrid).not.toBeNull();
+    expect(cardGrid!.className).toMatch(/lg:grid-cols-4/);
   });
 
   it('expands to show all events and selects event for dashboard', async () => {
@@ -126,10 +139,10 @@ describe('TracEventsLandingPage', () => {
 
     await screen.findByRole('heading', { name: 'Choose an event' });
     await user.click(screen.getByRole('button', { name: /show all \(5\)/i }));
-    expect(screen.getByRole('heading', { name: 'Event 5', level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Event 5', level: 5 })).toBeInTheDocument();
 
-    const tileHeading = screen.getAllByRole('heading', { name: 'Event 1', level: 3 })[0];
-    const tile = tileHeading.closest('button');
+    const tileHeading = screen.getAllByRole('heading', { name: 'Event 1', level: 5 })[0];
+    const tile = tileHeading.closest('[role="button"]');
     expect(tile).not.toBeNull();
     await user.click(tile!);
     expect(mockSetSelectedEvent).toHaveBeenCalledWith(fiveEvents[0]);

@@ -10,7 +10,7 @@ import {
 describe('trac-nav', () => {
   it('defines primary nav in IA order (max five items)', () => {
     const labels = TRAC_PRIMARY_NAV_DEFINITIONS.map((item) => item.label);
-    expect(labels).toEqual(['Overview', 'Planning', 'Itinerary', 'Risks']);
+    expect(labels).toEqual(['Overview', 'Planning', 'Itinerary', 'Costs', 'Risks']);
     expect(TRAC_PRIMARY_NAV_DEFINITIONS.length).toBeLessThanOrEqual(5);
   });
 
@@ -22,10 +22,9 @@ describe('trac-nav', () => {
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/itinerary')).toBe(true);
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/risks')).toBe(true);
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/costs')).toBe(true);
-    expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/masterplan')).toBe(true);
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/currency-rates')).toBe(false);
     const labels = getEnabledTracNavItems().map((item) => item.label);
-    expect(labels).toEqual(['Overview', 'Planning', 'Itinerary', 'Risks']);
+    expect(labels).toEqual(['Overview', 'Planning', 'Itinerary', 'Costs', 'Risks']);
   });
 
   it('shows landing nav when no event is selected', () => {
@@ -35,7 +34,7 @@ describe('trac-nav', () => {
 
   it('shows lifecycle nav when an event is selected', () => {
     const labels = getTracNavigationItemsForShell(true).map((item) => item.label);
-    expect(labels).toEqual(['Overview', 'Planning', 'Itinerary', 'Risks']);
+    expect(labels).toEqual(['Overview', 'Planning', 'Itinerary', 'Costs', 'Risks']);
   });
 
   it('landing nav item points to authenticated home', () => {

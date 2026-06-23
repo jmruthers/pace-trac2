@@ -3,6 +3,8 @@
 **Document status:** Draft — rebuild implementation contract.  
 **Companion authority:** `trac-project-brief.md`, `trac-architecture.md`.
 
+**Withdrawn (2026-06):** Master plan route and SLICE-10 implementation removed from pace-trac2. Prototype **Full plan** mode remains the layout reference only; TRAC v1 delivers itinerary schedule views at `/itinerary` only.
+
 ---
 
 ## Orchestration metadata (canonical)
@@ -92,7 +94,7 @@
 
 - [ ] Header band: event glyph/logo, **Master plan · {code}**, event name, tagline; KV grid (dates, organisation, participants, base currency).
 - [ ] **Journey map** section: transport legs list with mode glyph, route name/number, place line, datetime + status.
-- [ ] **Contact list** section: mini table (name, role, phone, email) with count in heading.
+- [ ] **Contact list** section: read-only pace-core `DataTable` (name, role, phone, email) with count in heading; no CRUD toolbar (print-friendly).
 - [ ] **Cost summary** section: per-type amounts, per participant, hero cells for total, accommodation, transport.
 - [ ] **Itinerary** section: day blocks with day number + heading; journey-leg rows per entry (time, resource, place).
 - [ ] Print button triggers `window.print()`; print CSS variables for title/event/app name.
@@ -127,6 +129,7 @@ Single scrollable document (`mp-doc`) suitable for print — prototype embeds in
 
 - Section title **Contact list** with contact count.
 - `ds-table is-mini`: Name, Role, Phone, Email columns.
+- Production: read-only `DataTable` with all interactive features disabled (equivalent to prototype `ds-table is-mini`; no Card wrapper).
 
 **4. Cost summary**
 

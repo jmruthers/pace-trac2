@@ -6,7 +6,6 @@ export const TRAC_PAGE_NAMES = {
   contacts: 'ContactsPage',
   costs: 'CostsPage',
   journal: 'JournalPage',
-  masterplan: 'MasterplanPage',
   risks: 'RisksPage',
   currencyRates: 'CurrencyRatesPage',
 } as const;

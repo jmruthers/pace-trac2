@@ -29,15 +29,24 @@ export const transportModeSchema = z.enum(TRANSPORT_MODE_VALUES, {
   message: 'Select a valid transport mode',
 });
 
-const baseLogisticsSchema = z.object({
-  status: tracStatusSchema.default('idea'),
-  notes: z.string().optional(),
-  booking_reference: z.string().optional(),
-  currency: z.string().max(3).optional(),
-  individual_cost: optionalCostSchema,
-  group_cost: optionalCostSchema,
-  capacity: capacitySchema,
-});
+const baseLogisticsSchema = z
+  .object({
+    status: tracStatusSchema.default('idea'),
+    notes: z.string().optional(),
+    booking_reference: z.string().optional(),
+    currency: z.string().max(3).optional(),
+    individual_cost: optionalCostSchema,
+    group_cost: optionalCostSchema,
+    capacity: capacitySchema,
+  })
+  .refine(
+    (data) => {
+      const hasIndividual = data.individual_cost != null && data.individual_cost !== 0;
+      const hasGroup = data.group_cost != null && data.group_cost !== 0;
+      return !(hasIndividual && hasGroup);
+    },
+    { message: 'Enter either a per-person or group cost, not both', path: ['individual_cost'] }
+  );
 
 export const transportFormSchema = baseLogisticsSchema
   .extend({

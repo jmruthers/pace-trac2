@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { ItineraryScope } from '@solvera/pace-core/itinerary';
+import { buildNotesByResourceKey } from '@/features/itinerary/build-assignment-notes';
 import { buildItineraryModel } from '@/features/itinerary/build-itinerary-model';
 import { useItineraryAudience } from '@/features/itinerary/hooks/useItineraryAudience';
 import { useEventAssignments } from '@/features/itinerary/hooks/useEventAssignments';
@@ -8,26 +9,38 @@ import {
   mapAssignmentsToItineraryInput,
   mapLogisticsToItineraryResources,
 } from '@/features/itinerary/map-logistics-to-itinerary-input';
-import type { ItineraryModel } from '@/features/itinerary/types';
+import type { ItineraryModel, ItineraryViewMode } from '@/features/itinerary/types';
 import {
   useAccommodationList,
   useActivityList,
   useTransportList,
 } from '@/features/planning/hooks/useLogisticsList';
+import { usePlanningScope } from '@/features/planning/hooks/usePlanningScope';
 
-export type ItineraryViewTab = 'event' | 'personal';
+export interface UseItineraryViewModelOptions {
+  viewMode: ItineraryViewMode;
+  /** Selected participant application for participant view; required when viewMode is participant. */
+  participantApplicationId: string | null;
+  eventDefaultTimezone?: string | null;
+}
 
-function scopeForTab(
-  tab: ItineraryViewTab,
+function scopeForView(
+  viewMode: ItineraryViewMode,
   participantApplicationId: string | null
 ): ItineraryScope | undefined {
-  if (tab === 'personal' && participantApplicationId) {
+  if (viewMode === 'participant' && participantApplicationId != null) {
     return { mode: 'participant', participantApplicationId };
   }
   return { mode: 'all' };
 }
 
-export function useItineraryViewModel(activeTab: ItineraryViewTab) {
+/** @deprecated Use ItineraryViewMode */
+export type ItineraryViewTab = 'event' | 'personal';
+
+export function useItineraryViewModel(options: UseItineraryViewModelOptions) {
+  const { viewMode, participantApplicationId, eventDefaultTimezone = null } = options;
+
+  const { isReady, isLoading: scopeLoading } = usePlanningScope();
   const transport = useTransportList();
   const accommodation = useAccommodationList();
   const activity = useActivityList();
@@ -35,12 +48,13 @@ export function useItineraryViewModel(activeTab: ItineraryViewTab) {
     useEventAssignments();
   const audience = useItineraryAudience();
 
-  const isLoading =
+  const logisticsLoading =
     transport.isLoading ||
     accommodation.isLoading ||
     activity.isLoading ||
-    assignmentsLoading ||
-    audience.isLoading;
+    assignmentsLoading;
+
+  const isLoading = scopeLoading || (isReady && logisticsLoading);
 
   const isError =
     transport.isError ||
@@ -82,37 +96,69 @@ export function useItineraryViewModel(activeTab: ItineraryViewTab) {
     [assignments]
   );
 
+  const effectiveViewMode: ItineraryViewMode = useMemo(() => {
+    if (audience.mode === 'participant') return 'participant';
+    return viewMode;
+  }, [audience.mode, viewMode]);
+
+  const effectiveParticipantId = useMemo(() => {
+    if (audience.mode === 'participant') {
+      return audience.participantApplicationId;
+    }
+    if (effectiveViewMode === 'participant') {
+      return participantApplicationId;
+    }
+    return null;
+  }, [audience.mode, audience.participantApplicationId, effectiveViewMode, participantApplicationId]);
+
+  const notesByResourceKey = useMemo(
+    () =>
+      effectiveViewMode === 'participant'
+        ? buildNotesByResourceKey(assignments, effectiveParticipantId)
+        : {},
+    [assignments, effectiveParticipantId, effectiveViewMode]
+  );
+
   const model: ItineraryModel | null = useMemo(() => {
     if (audience.mode === 'day_visitor') return null;
 
-    const tab: ItineraryViewTab =
-      audience.mode === 'participant' ? 'personal' : activeTab;
-
-    if (audience.mode === 'participant' && !audience.participantApplicationId) {
-      return null;
+    if (effectiveViewMode === 'participant' && effectiveParticipantId == null) {
+      return {
+        dayGroups: [],
+        visibleDateRange: null,
+        displayByResourceKey,
+        skippedResources: [],
+        notesByResourceKey: {},
+      };
     }
 
-    const scope = scopeForTab(tab, audience.participantApplicationId);
+    const scope = scopeForView(effectiveViewMode, effectiveParticipantId);
 
     return buildItineraryModel({
       resources,
       assignments: assignmentInputs,
       scope,
-      eventDefaultTimezone: null,
+      eventDefaultTimezone,
       displayByResourceKey,
+      notesByResourceKey,
     });
   }, [
-    activeTab,
     assignmentInputs,
     audience.mode,
-    audience.participantApplicationId,
     displayByResourceKey,
+    effectiveParticipantId,
+    effectiveViewMode,
+    eventDefaultTimezone,
+    notesByResourceKey,
     resources,
   ]);
 
   return {
     audience,
     model,
+    effectiveViewMode,
+    effectiveParticipantId,
+    assignments,
     isLoading,
     isError,
     error,

@@ -1,53 +1,88 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   LoadingSpinner,
   PageHeader,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
 } from '@solvera/pace-core/components';
 import { usePaceMain } from '@solvera/pace-core/hooks';
 import { useTracEventBreadcrumbs } from '@/app/shell/use-trac-event-breadcrumbs';
-import { collectMapData } from '@/features/itinerary/collect-map-points';
+import { useApprovedApplications } from '@/features/assignments/hooks/useApprovedApplications';
+import { formatParticipantLabel } from '@/features/assignments/participant-label';
 import { ItineraryDayTimeline } from '@/features/itinerary/components/ItineraryDayTimeline';
 import { ItineraryDayVisitorState } from '@/features/itinerary/components/ItineraryDayVisitorState';
-import { ItineraryMapPanel } from '@/features/itinerary/components/ItineraryMapPanel';
-import { ItineraryTimezoneNotice } from '@/features/itinerary/components/ItineraryTimezoneNotice';
+import { ItineraryParticipantBanner } from '@/features/itinerary/components/ItineraryParticipantBanner';
+import { ItineraryViewSwitcher } from '@/features/itinerary/components/ItineraryViewSwitcher';
+import { useItineraryEventTimezone } from '@/features/itinerary/hooks/useItineraryEventTimezone';
 import {
-  useItineraryViewModel,
-  type ItineraryViewTab,
-} from '@/features/itinerary/hooks/useItineraryViewModel';
+  buildItineraryParticipantOptions,
+  resolveDefaultParticipantId,
+} from '@/features/itinerary/itinerary-participant-options';
+import { useItineraryViewModel } from '@/features/itinerary/hooks/useItineraryViewModel';
+import type { ItineraryViewMode } from '@/features/itinerary/types';
+
+function subtitleForViewMode(viewMode: ItineraryViewMode): string {
+  if (viewMode === 'participant') {
+    return 'One participant personal schedule — only assigned transport, accommodation, and activities.';
+  }
+  return 'The full event schedule, grouped by day.';
+}
 
 export function ItineraryContent() {
   usePaceMain({ printTitle: 'Itinerary' });
   const breadcrumbItems = useTracEventBreadcrumbs('Itinerary');
+  const { ianaTimezone } = useItineraryEventTimezone();
+  const { applications } = useApprovedApplications();
 
-  const [activeTab, setActiveTab] = useState<ItineraryViewTab>('event');
-  const { audience, model, isLoading, isError, error } = useItineraryViewModel(activeTab);
+  const [viewMode, setViewMode] = useState<ItineraryViewMode>('planner');
+  const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
 
-  const participantView =
-    audience.mode === 'participant' || (audience.mode === 'dual' && activeTab === 'personal');
+  const {
+    audience,
+    model,
+    effectiveViewMode,
+    effectiveParticipantId,
+    assignments,
+    isLoading,
+    isError,
+    error,
+  } = useItineraryViewModel({
+    viewMode,
+    participantApplicationId: selectedParticipantId,
+    eventDefaultTimezone: ianaTimezone,
+  });
 
+  const participantOptions = useMemo(
+    () => buildItineraryParticipantOptions(applications, assignments),
+    [applications, assignments]
+  );
+
+  useEffect(() => {
+    setSelectedParticipantId((current) =>
+      resolveDefaultParticipantId(participantOptions, current)
+    );
+  }, [participantOptions]);
+
+  useEffect(() => {
+    if (audience.mode === 'participant') {
+      setViewMode('participant');
+    }
+  }, [audience.mode]);
+
+  const participantName = useMemo(() => {
+    if (effectiveParticipantId == null) return null;
+    const app = applications.find((row) => row.id === effectiveParticipantId);
+    return app != null ? formatParticipantLabel(app) : null;
+  }, [applications, effectiveParticipantId]);
+
+  const showParticipantPicker =
+    effectiveViewMode === 'participant' &&
+    audience.canReadPlanning &&
+    participantOptions.length > 0;
+
+  const participantView = effectiveViewMode === 'participant';
   const sectionTitle = participantView ? 'Your itinerary' : 'Event itinerary';
 
-  const subtitle =
-    audience.mode === 'dual'
-      ? 'Planner view, participant view, or open the master plan for printing.'
-      : participantView
-        ? 'Your assigned transport, accommodation, and activities for this event.'
-        : 'Time-ordered schedule for transport, accommodation, and activities.';
-
-  const mapData = useMemo(() => {
-    if (!model) return { points: [], transportLegs: [] };
-    return collectMapData(model.dayGroups, model.displayByResourceKey);
-  }, [model]);
-
-  const headerActions = <Link to="/masterplan">Master plan</Link>;
-
-  if (isLoading) {
+  if (isLoading || audience.isAudiencePending) {
     return (
       <section className="grid min-h-[40vh] place-items-center" aria-busy="true">
         <LoadingSpinner label="Loading itinerary…" />
@@ -66,7 +101,7 @@ export function ItineraryContent() {
   if (audience.mode === 'day_visitor') {
     return (
       <section className="grid gap-4">
-        <PageHeader breadcrumbItems={breadcrumbItems} title="Itinerary" subtitle={subtitle} />
+        <PageHeader breadcrumbItems={breadcrumbItems} title="Itinerary" subtitle={subtitleForViewMode('participant')} />
         <ItineraryDayVisitorState />
       </section>
     );
@@ -77,11 +112,20 @@ export function ItineraryContent() {
       <PageHeader
         breadcrumbItems={breadcrumbItems}
         title="Itinerary"
-        subtitle={subtitle}
-        actions={headerActions}
+        subtitle={subtitleForViewMode(viewMode)}
       />
 
-      <ItineraryTimezoneNotice />
+      <ItineraryViewSwitcher viewMode={viewMode} onViewModeChange={setViewMode} />
+
+      {participantView ? (
+        <ItineraryParticipantBanner
+          participantName={participantName}
+          options={participantOptions}
+          selectedParticipantId={effectiveParticipantId}
+          onSelectParticipantId={setSelectedParticipantId}
+          showPicker={showParticipantPicker}
+        />
+      ) : null}
 
       {model != null && model.skippedResources.length > 0 ? (
         <Alert variant="destructive" role="alert">
@@ -99,76 +143,20 @@ export function ItineraryContent() {
         </Alert>
       ) : null}
 
-      {audience.mode === 'dual' ? (
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => {
-            if (value === 'event' || value === 'personal') setActiveTab(value);
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="event">Planner view</TabsTrigger>
-            <TabsTrigger value="personal">Participant view</TabsTrigger>
-          </TabsList>
-          <TabsContent value="event">
-            <ItineraryPanels
-              model={model}
-              mapData={mapData}
-              participantView={false}
-              canLinkToPlanning={audience.canReadPlanning}
-              sectionTitle="Event itinerary"
-            />
-          </TabsContent>
-          <TabsContent value="personal">
-            <ItineraryPanels
-              model={model}
-              mapData={mapData}
-              participantView
-              canLinkToPlanning={audience.canReadPlanning}
-              sectionTitle="Your itinerary"
-            />
-          </TabsContent>
-        </Tabs>
+      {model == null ? (
+        <p>No itinerary data available.</p>
       ) : (
-        <ItineraryPanels
-          model={model}
-          mapData={mapData}
+        <ItineraryDayTimeline
+          dayGroups={model.dayGroups}
+          visibleDateRange={model.visibleDateRange}
+          timezoneIana={ianaTimezone}
+          displayByResourceKey={model.displayByResourceKey}
+          notesByResourceKey={model.notesByResourceKey}
           participantView={participantView}
           canLinkToPlanning={audience.canReadPlanning}
           sectionTitle={sectionTitle}
         />
       )}
-    </section>
-  );
-}
-
-function ItineraryPanels({
-  model,
-  mapData,
-  participantView,
-  canLinkToPlanning,
-  sectionTitle,
-}: {
-  model: ReturnType<typeof useItineraryViewModel>['model'];
-  mapData: ReturnType<typeof collectMapData>;
-  participantView: boolean;
-  canLinkToPlanning: boolean;
-  sectionTitle: string;
-}) {
-  if (model == null) {
-    return <p>No itinerary data available.</p>;
-  }
-
-  return (
-    <section className="grid gap-6 lg:grid-cols-2">
-      <ItineraryDayTimeline
-        dayGroups={model.dayGroups}
-        displayByResourceKey={model.displayByResourceKey}
-        participantView={participantView}
-        canLinkToPlanning={canLinkToPlanning}
-        sectionTitle={sectionTitle}
-      />
-      <ItineraryMapPanel mapData={mapData} />
     </section>
   );
 }

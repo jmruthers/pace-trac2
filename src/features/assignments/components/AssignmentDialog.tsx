@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   Alert,
   Button,
+  ConfirmationDialog,
   Dialog,
   DialogBody,
   DialogContent,
@@ -57,6 +58,7 @@ export function AssignmentDialog({
   const [notes, setNotes] = useState(() => (mode === 'edit' && assignment ? assignment.notes ?? '' : ''));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showOverCapacityStep, setShowOverCapacityStep] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const handleDialogOpenChange = (next: boolean) => {
     if (next) {
@@ -197,7 +199,12 @@ export function AssignmentDialog({
           </DialogBody>
           <DialogFooter>
             {mode === 'edit' && canDelete ? (
-              <Button type="button" variant="destructive" onClick={() => void handleDelete()} disabled={isSaving}>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setDeleteConfirmOpen(true)}
+                disabled={isSaving}
+              >
                 Delete
               </Button>
             ) : null}
@@ -221,6 +228,20 @@ export function AssignmentDialog({
           </DialogFooter>
         </DialogContent>
       </DialogPortal>
+      <ConfirmationDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete assignment"
+        description={
+          assignment
+            ? `Remove ${assignment.participantLabel} from ${resource.label}? This cannot be undone.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDelete}
+        isPending={isSaving}
+      />
     </Dialog>
   );
 }

@@ -21,6 +21,7 @@ audit/*.md
 
 # Test coverage
 coverage/
+**/*config*.timestamp-*.mjs
 .vitest-localstorage
 
 # Playwright / runner artifacts

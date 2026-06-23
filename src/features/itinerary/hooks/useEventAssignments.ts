@@ -25,9 +25,11 @@ export function useEventAssignments() {
   const secureSupabase = asAssignmentsClient(useSecureSupabase());
   const { eventId, isReady } = useItineraryScope();
 
+  const enabled = Boolean(secureSupabase && isReady && eventId);
+
   const query = useQuery({
     queryKey: itineraryQueryKeys.assignments(eventId ?? ''),
-    enabled: Boolean(secureSupabase && isReady && eventId),
+    enabled,
     queryFn: async (): Promise<AssignmentRow[]> => {
       if (!secureSupabase || !eventId) return [];
       const { data, error } = await secureSupabase
@@ -43,7 +45,7 @@ export function useEventAssignments() {
 
   return {
     assignments: query.data ?? [],
-    isLoading: query.isLoading,
+    isLoading: enabled && query.isLoading,
     isError: query.isError,
     error: query.error,
     refetch: query.refetch,

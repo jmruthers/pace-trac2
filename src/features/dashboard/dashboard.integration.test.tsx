@@ -169,7 +169,7 @@ describe('dashboard integration (TR02)', () => {
 
   afterEach(cleanup);
 
-  it('happy path: planner sees summary cards with counts and links', () => {
+  it('happy path: planner sees KPIs, launcher cards, and links', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <DashboardPage />
@@ -178,17 +178,16 @@ describe('dashboard integration (TR02)', () => {
 
     expect(screen.getAllByRole('heading', { name: 'Summit 2026' }).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Plan the journey').length).toBeGreaterThan(0);
-    expect(screen.getByText(/Transport: 1 confirmed of 2/)).toBeInTheDocument();
-    expect(screen.getByText(/Visible dates:/)).toBeInTheDocument();
+    expect(screen.getByText(/3 confirmed of 5/)).toBeInTheDocument();
+    expect(screen.getByText(/2026-05-01 – 2026-05-04/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Event cost' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Contacts' })).toBeInTheDocument();
     expect(screen.getByText('3', { selector: 'strong' })).toBeInTheDocument();
-    expect(screen.getByText(/Event total:/)).toBeInTheDocument();
 
     expect(screen.getByRole('button', { name: 'Open planning' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'View itinerary' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Needs attention' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /logistics to confirm/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open costs' })).toHaveAttribute('href', '/costs');
     expect(screen.getByRole('link', { name: 'Open contacts' })).toHaveAttribute('href', '/contacts');
     expect(screen.getByRole('link', { name: 'Open assignments' })).toHaveAttribute(
       'href',
@@ -222,7 +221,7 @@ describe('dashboard integration (TR02)', () => {
     errorSpy.mockRestore();
   });
 
-  it('partial failure: one card error does not blank sibling cards (AC7)', () => {
+  it('partial failure: planning aggregate error does not blank sibling launcher cards (AC7)', () => {
     mockPlanningCounts.mockReturnValue({
       transport: { confirmed: 0, total: 0 },
       accommodation: { confirmed: 0, total: 0 },
@@ -240,12 +239,12 @@ describe('dashboard integration (TR02)', () => {
     );
 
     expect(screen.getAllByRole('heading', { name: 'Summit 2026' }).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Planning load failed/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
-    expect(screen.getAllByRole('heading', { name: 'Itinerary' }).length).toBeGreaterThan(0);
-    expect(screen.getByRole('heading', { name: 'Costs' })).toBeInTheDocument();
-    expect(screen.getByText(/Visible dates:/)).toBeInTheDocument();
-    expect(screen.getByText(/Event total:/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Contacts' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open contacts' })).toHaveAttribute('href', '/contacts');
+    expect(screen.getByRole('link', { name: 'Open assignments' })).toHaveAttribute(
+      'href',
+      '/assignments'
+    );
   });
 
   it('attention queue: shows empty state when nothing needs action', () => {

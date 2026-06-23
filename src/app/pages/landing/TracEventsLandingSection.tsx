@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Button,
+  CardGrid,
+  CardGridItem,
   EmptyState,
   LoadingSpinner,
   PageHeader,
@@ -98,11 +100,13 @@ export function TracEventsLandingSection() {
         />
       ) : (
         <>
-          <section className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <CardGrid columns={{ md: 2, lg: 4 }}>
             {visibleEvents.map((event) => (
-              <TracEventTile key={event.id} event={event} onSelect={handleSelectEvent} />
+              <CardGridItem key={event.id}>
+                <TracEventTile event={event} onSelect={handleSelectEvent} />
+              </CardGridItem>
             ))}
-          </section>
+          </CardGrid>
 
           {showToggle ? (
             <section className="grid place-items-center">

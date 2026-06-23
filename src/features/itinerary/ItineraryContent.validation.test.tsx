@@ -52,6 +52,16 @@ vi.mock('@/features/planning/context/GoogleMapsPlanningContext', () => ({
   }),
 }));
 
+vi.mock('@/features/assignments/hooks/useApprovedApplications', () => ({
+  useApprovedApplications: () => ({
+    applications: [],
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}));
+
 vi.mock('@solvera/pace-core/rbac', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@solvera/pace-core/rbac')>();
   return {

@@ -6,10 +6,22 @@ import type { AssignmentRow } from '@/features/assignments/types';
 import type {
   AccommodationRow,
   ActivityRow,
+  BaseLogisticsRow,
   LogisticsResourceKind,
   TransportRow,
 } from '@/features/planning/types';
 import type { ItineraryResourceDisplay } from '@/features/itinerary/types';
+
+function sharedLogisticsFields(row: BaseLogisticsRow) {
+  return {
+    notes: row.notes,
+    bookingReference: row.booking_reference,
+    currency: row.currency,
+    individualCost: row.individual_cost,
+    groupCost: row.group_cost,
+    capacity: row.capacity,
+  };
+}
 
 function resourceKey(resourceType: LogisticsResourceKind, resourceId: string): string {
   return `${resourceType}:${resourceId}`;
@@ -72,6 +84,13 @@ export function buildTransportDisplay(row: TransportRow): ItineraryResourceDispl
     title: modeLabel,
     subtitle: `${dep} → ${arr}`,
     coords,
+    status: row.status,
+    ...sharedLogisticsFields(row),
+    transportMode: row.mode,
+    transportNumber: row.transport_number,
+    departureLabel: dep,
+    arrivalLabel: arr,
+    endTime: row.arrival_time,
   };
 }
 
@@ -91,6 +110,11 @@ export function buildActivityDisplay(row: ActivityRow): ItineraryResourceDisplay
     title: row.name,
     subtitle: start === finish ? start : `${start} → ${finish}`,
     coords,
+    status: row.status,
+    ...sharedLogisticsFields(row),
+    startLocationLabel: start,
+    finishLocationLabel: finish,
+    endTime: row.finish_time,
   };
 }
 
@@ -103,6 +127,8 @@ export function buildAccommodationDisplay(row: AccommodationRow): ItineraryResou
     title: row.name,
     subtitle: location,
     coords,
+    status: row.status,
+    ...sharedLogisticsFields(row),
     checkInTime: row.check_in_time,
     checkOutTime: row.check_out_time,
   };

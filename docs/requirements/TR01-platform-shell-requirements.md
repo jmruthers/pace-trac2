@@ -102,8 +102,8 @@ This slice does not own `trac_*` domain tables but **must** load RBAC/page metad
 
 - [ ] Public `/login` renders without authenticated header, footer, or primary nav (prototype: `PaceLoginPage` only).
 - [ ] Authenticated routes render vertical stack: header → main outlet → footer inside the shell (prototype: `PaceHeader` → `page-body` → `PaceFooter`).
-- [ ] Authenticated home at `/` shows the event landing pattern: `PageHeader`, `EventTile` grid with show-more toggle, optional cross-event `AttentionQueue` (prototype `TracLandingPage`).
-- [ ] Primary nav shows **Events** only when no event is in context; when an event is active, nav lists **Overview**, **Planning**, **Itinerary**, and **Risks** (max five primary items per CR05c; prototype `navItemsForRoute`). Additional routes (Assignments, Contacts, Costs, Journal, Master Plan) are deep-link only — reached from the event overview launcher grid.
+- [ ] Authenticated home at `/` shows the event landing pattern: `PageHeader`, `CardGrid` / `CardGridItem` event tile directory (via `TracEventTile` / `EventCard`), show-more toggle, optional cross-event `AttentionSection` (prototype `TracLandingPage`).
+- [ ] Primary nav shows **Events** only when no event is in context; when an event is active, nav lists **Overview**, **Planning**, **Itinerary**, **Costs**, and **Risks** (max five primary items per CR05c). Additional routes (Assignments, Contacts, Journal, Master Plan) are deep-link only — reached from the event overview launcher grid.
 - [ ] Header includes AppSwitcher for TRAC, org context selector, event context, user menu with **All events** back to home (prototype `PaceHeader`).
 - [ ] Unknown authenticated paths show NotFound with 404 glyph, explanatory copy, and primary **Back to events** action to `/` (prototype `notFound`).
 - [ ] Invalid event code in URL shows event-not-found surface with same structure and CTA (prototype `eventNotFound`).
@@ -184,7 +184,7 @@ Shell-owned pre-event home (not TR02 dashboard cards):
 
 - `PageHeader`: breadcrumb `pace-trac` → **Events**; title **Choose an event**; subtitle stating how many events the user plans logistics for.
 - **Empty:** `EmptyState` with calendar icon — events from the operator app appear here.
-- **Populated:** `EventTile` grid in `event-tile-grid` section; default **4** tiles, **Show all (N)** / **Show fewer** toggle when more than four events.
+- **Populated:** `CardGrid` + `CardGridItem` wrapping `TracEventTile` (`EventCard`); columns `{ md: 2, lg: 4 }`; default **4** tiles visible, **Show all (N)** / **Show fewer** toggle when more than four events.
 - Each tile: event logo/glyph, date chip, title, date range, venue meta, footer counts (days, participants); click navigates to event overview.
 - **AttentionQueue** below grid: cross-event open risks with warn tone; each item deep-links to that event’s risks register.
 
@@ -193,9 +193,9 @@ Shell-owned pre-event home (not TR02 dashboard cards):
 | Context | Prototype primary nav |
 |---------|----------------------|
 | No event in route (`#/`) | Single item **Events** → `/` |
-| Event active (`#/events/:code/…`) | **Overview**, **Planning**, **Itinerary**, **Risks** |
+| Event active (`#/events/:code/…`) | **Overview**, **Planning**, **Itinerary**, **Costs**, **Risks** (production); prototype omits **Costs** from primary nav |
 
-Contacts, Journal, Costs, Assignments, and Master plan are **not** primary nav items in the prototype; they are reached from the event overview launcher grid ([TR02](./TR02-dashboard-requirements.md)). Primary nav MUST NOT exceed five items (CR05c).
+Contacts, Journal, Assignments, and Master plan are **not** primary nav items; they are reached from the event overview launcher grid ([TR02](./TR02-dashboard-requirements.md)). **Costs** is a primary nav item in production (between Itinerary and Risks). Primary nav MUST NOT exceed five items (CR05c).
 
 Nav items must respect RBAC permission wiring (`enforcePermissions` / `routeAccessDenied` on `PaceAppLayout`; per-item `pageId` gating in `NavigationMenu`).
 

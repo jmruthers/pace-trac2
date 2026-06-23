@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import {
   Alert,
   Button,
+  ConfirmationDialog,
   FileUpload,
   LoadingSpinner,
 } from '@solvera/pace-core/components';
 import { useSecureSupabase } from '@solvera/pace-core/rbac';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { usePlanningAttachments } from '@/features/planning/hooks/usePlanningAttachments';
 import { usePlanningScope } from '@/features/planning/hooks/usePlanningScope';
-import type { LogisticsTableName } from '@/features/planning/types';
+import type { LogisticsTableName, PlanningAttachment } from '@/features/planning/types';
 
 interface PlanningAttachmentsSectionProps {
   tableName: LogisticsTableName;
@@ -26,14 +29,19 @@ export function PlanningAttachmentsSection({
     attachments,
     isLoading,
     removeAttachment,
+    isDeleting,
     uploadError,
     deleteError,
     refetch,
   } = usePlanningAttachments(tableName, recordId);
+  const [pendingAttachment, setPendingAttachment] = useState<PlanningAttachment | null>(null);
 
   if (recordId == null) {
     return <p>Save this item before adding supporting documents.</p>;
   }
+
+  const pendingFileName =
+    pendingAttachment?.file_name ?? pendingAttachment?.file_path ?? 'this document';
 
   return (
     <section>
@@ -57,6 +65,7 @@ export function PlanningAttachmentsSection({
           organisation_id={organisationId}
           event_id={eventId}
           app_id={appId}
+          pageContext={TRAC_PAGE_NAMES.planning}
           bucket="files"
           category="planning"
           folder={tableName}
@@ -73,7 +82,7 @@ export function PlanningAttachmentsSection({
               <Button
                 type="button"
                 variant="destructive"
-                onClick={() => void removeAttachment(attachment)}
+                onClick={() => setPendingAttachment(attachment)}
               >
                 Delete
               </Button>
@@ -81,6 +90,24 @@ export function PlanningAttachmentsSection({
           </li>
         ))}
       </ul>
+      <ConfirmationDialog
+        open={pendingAttachment != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingAttachment(null);
+          }
+        }}
+        title="Delete document"
+        description={`This will permanently remove ${pendingFileName} from this planning item.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={async () => {
+          if (pendingAttachment == null) return;
+          await removeAttachment(pendingAttachment);
+          setPendingAttachment(null);
+        }}
+        isPending={isDeleting}
+      />
     </section>
   );
 }

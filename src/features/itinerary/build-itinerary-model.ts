@@ -32,6 +32,7 @@ export function buildItineraryModel(input: {
   scope?: ItineraryScope;
   eventDefaultTimezone?: string | null;
   displayByResourceKey: Record<string, ItineraryResourceDisplay>;
+  notesByResourceKey?: Record<string, string>;
 }): ItineraryModel {
   const validResources: ItineraryResourceInput[] = [];
   const skippedResources: ItineraryBuildIssue[] = [];
@@ -55,6 +56,7 @@ export function buildItineraryModel(input: {
       visibleDateRange: null,
       displayByResourceKey: input.displayByResourceKey,
       skippedResources,
+      notesByResourceKey: input.notesByResourceKey ?? {},
     };
   }
 
@@ -74,6 +76,7 @@ export function buildItineraryModel(input: {
     visibleDateRange,
     displayByResourceKey: input.displayByResourceKey,
     skippedResources,
+    notesByResourceKey: input.notesByResourceKey ?? {},
   };
 }
 
@@ -90,5 +93,12 @@ export function getEntryDisplay(
     title: `${entry.resourceType} ${entry.resourceId.slice(0, 8)}`,
     subtitle: null,
     coords: [],
+    status: null,
+    notes: null,
+    bookingReference: null,
+    currency: null,
+    individualCost: null,
+    groupCost: null,
+    capacity: null,
   };
 }

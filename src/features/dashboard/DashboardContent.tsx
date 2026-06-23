@@ -2,13 +2,10 @@ import { Alert, Button, LoadingSpinner } from '@solvera/pace-core/components';
 import { usePaceMain } from '@solvera/pace-core/hooks';
 import { AssignmentsLinkCard } from '@/features/dashboard/components/AssignmentsLinkCard';
 import { ContactsSummaryCard } from '@/features/dashboard/components/ContactsSummaryCard';
-import { CostsSummaryCard } from '@/features/dashboard/components/CostsSummaryCard';
 import { DashboardAttentionSection } from '@/features/dashboard/components/DashboardAttentionSection';
 import { DashboardEventHero } from '@/features/dashboard/components/DashboardEventHero';
 import { DashboardKpiRow } from '@/features/dashboard/components/DashboardKpiRow';
-import { ItinerarySummaryCard } from '@/features/dashboard/components/ItinerarySummaryCard';
 import { JournalSummaryCard } from '@/features/dashboard/components/JournalSummaryCard';
-import { PlanningSummaryCard } from '@/features/dashboard/components/PlanningSummaryCard';
 import { useDashboardEventHeader } from '@/features/dashboard/hooks/useDashboardEventHeader';
 
 export function DashboardContent() {
@@ -55,9 +52,6 @@ export function DashboardContent() {
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
         aria-label="Event summary"
       >
-          <PlanningSummaryCard />
-          <ItinerarySummaryCard />
-          <CostsSummaryCard />
           <ContactsSummaryCard />
           <AssignmentsLinkCard />
           <JournalSummaryCard />

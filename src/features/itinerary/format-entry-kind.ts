@@ -1,4 +1,10 @@
 import type { ItineraryEntryKind } from '@solvera/pace-core/itinerary';
+import {
+  formatDateTime,
+  formatInTimeZone,
+  formatTimezoneLabel,
+  getUserTimeZone,
+} from '@solvera/pace-core/utils';
 
 const ENTRY_KIND_LABELS: Record<ItineraryEntryKind, string> = {
   departure: 'Departure',
@@ -7,34 +13,57 @@ const ENTRY_KIND_LABELS: Record<ItineraryEntryKind, string> = {
   finish: 'Finish',
   'check-in': 'Check-in',
   'check-out': 'Check-out',
-  occupied: 'Stay',
+  occupied: 'Staying at',
 };
 
 export function formatEntryKind(kind: ItineraryEntryKind): string {
   return ENTRY_KIND_LABELS[kind] ?? kind;
 }
 
+export function getAccommodationCardTitle(
+  entryKind: ItineraryEntryKind,
+  venueTitle: string
+): string {
+  switch (entryKind) {
+    case 'check-in':
+      return `Check in at ${venueTitle}`;
+    case 'check-out':
+      return `Check out from ${venueTitle}`;
+    case 'occupied':
+      return `Staying at ${venueTitle}`;
+    default:
+      return venueTitle;
+  }
+}
+
 export function formatOrderingTime(iso: string | null, timeZone?: string): string {
   if (iso == null) return '';
-  const instant = new Date(iso);
   if (timeZone != null && timeZone.length > 0) {
-    return new Intl.DateTimeFormat(undefined, {
-      timeZone,
-      dateStyle: 'short',
-      timeStyle: 'short',
-    }).format(instant);
+    return formatInTimeZone(iso, timeZone, 'dd/MM/yyyy HH:mm');
   }
-  return instant.toLocaleString();
+  return formatDateTime(iso);
+}
+
+/** Resolves row snapshot timezone or user timezone for display. */
+export function resolveEntryTimeZone(timeZone?: string): string {
+  return timeZone != null && timeZone.length > 0 ? timeZone : getUserTimeZone();
+}
+
+/** Time-only label for entry row primary/secondary columns. */
+export function formatEntryTimeShort(iso: string | null, timeZone?: string): string {
+  if (iso == null) return '';
+  return formatInTimeZone(iso, resolveEntryTimeZone(timeZone), 'HH:mm');
+}
+
+/** Human-readable timezone caption for entry row time column. */
+export function formatEntryTimezoneLabel(timeZone?: string): string {
+  const zone = resolveEntryTimeZone(timeZone);
+  return formatTimezoneLabel(zone);
 }
 
 /** Local calendar day key (YYYY-MM-DD) for an instant in a timezone. */
 export function localDayKey(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date(iso));
+  return formatInTimeZone(iso, timeZone, 'yyyy-MM-dd');
 }
 
 export function isSameLocalDay(isoA: string, isoB: string, timeZone: string): boolean {

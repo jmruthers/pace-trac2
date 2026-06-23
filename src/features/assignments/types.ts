@@ -33,6 +33,7 @@ export interface ApprovedApplication {
   status: string;
   first_name: string | null;
   surname: string | null;
+  preferred_name: string | null;
 }
 
 export interface AssignmentWithParticipant extends AssignmentRow {

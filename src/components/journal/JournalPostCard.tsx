@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@solvera/pace-core/components';
+import { formatDateTime } from '@solvera/pace-core/utils';
 import type { JournalPost } from '@/types/journal';
 import { formatJournalContentForDisplay } from '@/utils/journal-content';
 import { JournalImageThumbnail } from '@/components/journal/JournalImageThumbnail';
@@ -74,7 +75,7 @@ export function JournalPostCard({
         <CardContent>
           <p>
             {post.status === 'published' ? 'Published' : 'Draft'} ·{' '}
-            {new Date(post.updated_at).toLocaleString()}
+            {formatDateTime(post.updated_at)}
           </p>
           {paragraphs.length === 0 ? (
             <p>No content</p>

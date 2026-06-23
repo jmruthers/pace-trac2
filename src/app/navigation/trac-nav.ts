@@ -23,7 +23,6 @@ export const TRAC_REGISTERED_ROUTE_PATHS = new Set<string>([
   '/contacts',
   '/costs',
   '/journal',
-  '/masterplan',
   '/risks',
 ]);
 

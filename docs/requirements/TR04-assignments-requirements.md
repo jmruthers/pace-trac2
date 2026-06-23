@@ -155,6 +155,7 @@ Embedded in planning item **stacked** `item-layout` (details card above assignme
 - Capacity pressure badges using design tokens (`CapacityMeter` or equivalent).
 - Empty: **No assignments yet** with CTA; loading on pickers.
 - Deep link from planning item optional (“Open assignments”) without embedding mutations on `/planning`.
+- **Destructive delete:** Edit-assignment dialog footer **Delete** opens pace-core `ConfirmationDialog` (`variant="destructive"`, `confirmLabel="Delete"`) naming participant and resource; confirm runs `deleteAssignment`; cancel dismisses without mutation (`isPending` wired to save/delete state).
 
 ### Implementation delta (pass 2)
 

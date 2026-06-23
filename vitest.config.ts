@@ -1,10 +1,23 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import fs from 'node:fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { domInclude, resolveAlias, sharedTestOptions } from './vitest.shared.js';
 
 const repoRoot = path.dirname(fileURLToPath(import.meta.url));
+
+const coverageRequested = process.argv.some(
+  (arg) => arg === '--coverage' || arg.startsWith('--coverage.')
+);
+
+const coverageReportsDirectory = coverageRequested
+  ? path.join(repoRoot, 'coverage', `.run-${process.pid}`)
+  : path.join(repoRoot, 'coverage');
+
+if (coverageRequested) {
+  fs.mkdirSync(path.join(coverageReportsDirectory, '.tmp'), { recursive: true });
+}
 const localStorageFile = path.resolve(repoRoot, '.vitest-localstorage');
 const nodeLocalStorageArgv = [`--localstorage-file=${localStorageFile}`];
 
@@ -17,12 +30,12 @@ const featureCoverageGlobs = [
   'src/features/costs/**/*.{ts,tsx}',
   'src/features/dashboard/**/*.{ts,tsx}',
   'src/features/itinerary/**/*.{ts,tsx}',
-  'src/features/master-plan/**/*.{ts,tsx}',
   'src/features/planning/**/*.{ts,tsx}',
   'src/features/risks/**/*.{ts,tsx}',
 ];
 
 export default defineConfig({
+  configLoader: 'runner',
   plugins: [react()],
   test: {
     ...sharedTestOptions,
@@ -42,6 +55,9 @@ export default defineConfig({
     },
     coverage: {
       provider: 'v8',
+      reportsDirectory: coverageReportsDirectory,
+      /** Keep temp files when tests fail so a partial run does not delete `.tmp` mid-merge. */
+      reportOnFailure: true,
       /** Only instrument files loaded during tests — faster validate/CI runs with broad include globs. */
       all: false,
       reporter: ['text', 'html'],
@@ -87,8 +103,8 @@ export default defineConfig({
   resolve: {
     alias: {
       ...resolveAlias,
-      react: path.resolve(__dirname, 'node_modules/react'),
-      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+      react: path.resolve(repoRoot, 'node_modules/react'),
+      'react-dom': path.resolve(repoRoot, 'node_modules/react-dom'),
     },
     dedupe: ['react', 'react-dom', 'react-router-dom'],
   },

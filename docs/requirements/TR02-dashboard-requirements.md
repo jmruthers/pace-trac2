@@ -33,11 +33,12 @@ Deliver the **event dashboard** at `/` and `/dashboard`: summary cards that refl
 
 - **Event gating:** Event-scoped route behind pace-core2 **`ProtectedRoute requireEvent`** with one approved TRAC no-event fallback; once the route is entered, card loading/empty/error states are handled in-page.
 - **Header:** Event title, logo (`core_events` / org storage per brief), tagline where available.
-- **Planning card:** Link to `/planning`; **counts of confirmed vs total** for activities, transport, accommodation (enum-safe).
-- **Itinerary card:** Link to `/itinerary`; earliest and latest visible dates from the SLICE-05 derived day-entry model, or explicit empty state.
-- **Costs card:** Link to `/costs`; total and **per-participant** cost using **event base currency** (no hard-coded AUD), with the overall participant denominator taken from the **approved application count** for the active event; formatting via shared helpers.
+- **KPI row:** Aggregate planning confirmed/total, itinerary visible date span, event total + per-participant cost (SLICE-07 rollup, event base currency), open risks count.
+- **Hero actions:** Primary **Open planning** → `/planning`; secondary **View itinerary** → `/itinerary`.
+- **Costs access:** Via primary nav **Costs** → `/costs` (not an Additional information launcher card).
 - **Contacts card:** Link to `/contacts`; contact count.
 - **Assignments link:** Include a lightweight **link** to **`/assignments`** (no extra assignment aggregate required for v1).
+- **Journal card:** Link to `/journal` with descriptive copy.
 - **Partial failure:** Hybrid policy. Route/event gating failures are handled at the route/shell level by the shared TRAC no-event fallback. After route access is established, required event identity/header data is critical: if it cannot load, show a page-level error state. After header identity is established, cards degrade independently. A failure in one aggregate must not blank the whole dashboard; failed cards show inline error/retry messaging while successful cards still render. Empty states are not errors.
 - **Permissions:** Read access gated by **`dashboard`** page key once the required TRAC page registration / permission seeding prerequisite is present on dev-db.
 - **Person-aware data:** Where costs or counts depend on assignments/capacity, consume SLICE-04/07 data paths — no duplicate business rules.
@@ -81,13 +82,13 @@ Deliver the **event dashboard** at `/` and `/dashboard`: summary cards that refl
 
 ## Acceptance criteria
 
-1. With event selected and permission granted, all summary cards render with **correct aggregates** per the architecture dashboard contract (counts, dates, costs, contacts).
+1. With event selected and permission granted, KPI row and Additional information launcher cards render with **correct aggregates** per the architecture dashboard contract (counts, dates, costs, contacts).
 2. Planning confirmed/total counts use **`trac_status`** only.
 3. Costs display uses **event base currency** metadata — no literal AUD (or other) unless that is the event’s configured base.
 4. Missing-event handling is provided by the shared route-level TRAC no-event fallback; the dashboard itself does not invent a second no-event pattern.
 5. User without dashboard read permission cannot access metrics (guard or server denial with UI feedback).
 6. Dashboard includes a lightweight `/assignments` link (without introducing new assignment aggregate metrics).
-7. One failed aggregate card does not blank the whole dashboard.
+7. One failed upstream aggregate does not blank the whole dashboard; sibling launcher cards and hero still render.
 
 ### Layout (prototype parity targets — `EventOverviewPage`)
 
@@ -95,7 +96,7 @@ Deliver the **event dashboard** at `/` and `/dashboard`: summary cards that refl
 - [ ] **Hero** region: `HeroLogo`, event title, meta rows (dates, venue, participant count), description, primary **Open planning** + secondary **View itinerary** actions.
 - [ ] **KPI row** (four tiles): planning confirmed/total, itinerary day span, total event cost + per participant, open risks count (warm when > 0).
 - [ ] **AttentionQueue** always rendered: heading **Needs attention** + count; warn-tone items when actionable; compact `EmptyState` in `Card` when caught up (**Nothing needs attention**).
-- [ ] **Additional information** section: launcher grid (Contacts, Cost summary, Journal) with icon, title, description, optional count badge.
+- [ ] **Additional information** section: launcher grid (Contacts, Assignments, Journal) with title, description, optional count badge; no Planning, Itinerary, or Costs cards (those domains use KPI row, hero actions, and primary nav).
 
 ---
 
@@ -120,7 +121,7 @@ The event overview does **not** render separate Planning / Itinerary / Costs / C
 
 - **Hero actions:** Open planning, View itinerary
 - **KPI row:** planning confirmed/total, itinerary span, total cost, open risks
-- **Launchers (3):** External contacts, Cost summary, Journal
+- **Launchers (3 + assignments):** Contacts, Assignments, Journal — not Planning, Itinerary, or Costs (Costs is primary nav; planning/itinerary metrics are in KPI row and hero)
 
 Architecture composite cards and `/assignments` link are **pass-2 production options** under Implementation delta — not prototype layout requirements.
 
@@ -168,19 +169,14 @@ Section heading **Additional information**; navigational cards (`button.launcher
 | Launcher | Icon | Routes to |
 |----------|------|-----------|
 | External contacts | phone | `/contacts` |
-| Cost summary | wallet | `/costs` |
+| Assignments | — | `/assignments` |
 | Journal | book | `/journal` |
 
-Each card: `div.top` with `launcher-icon`, `h3` title, optional `launcher-count` (contacts, journal posts; costs launcher has no count); `p` description. Exactly three launchers in prototype (no planning/itinerary/risks/assignments tiles here).
+Each card: title, optional count (contacts); `p` description. No Planning, Itinerary, or Costs launcher tiles (Costs is primary nav).
 
-### Architecture v1 dashboard cards (pass 2 alignment)
+### Architecture v1 dashboard (pass 2 alignment)
 
-Architecture composite contract also specifies discrete cards linking to planning, itinerary, costs, contacts, plus `/assignments` link. Pass 2 may:
-
-- Map KPI + launchers to explicit `Card`/`CardGrid` components per architecture, **or**
-- Retain `EventOverview` composite if it satisfies the same links and metrics.
-
-Either approach must use shared rollup helpers (SLICE-07) and CR25 date range for itinerary card.
+Production aligns with prototype layout authority: KPI row + hero actions surface planning, itinerary, and cost metrics; **Costs** is reached via primary nav. Additional information holds Contacts, Assignments, and Journal launcher cards only.
 
 ### Loading and errors
 
@@ -190,7 +186,7 @@ Either approach must use shared rollup helpers (SLICE-07) and CR25 date range fo
 ### Implementation delta (pass 2)
 
 - Prototype route `#/events/:code` with **Overview** in primary nav; production dashboard at `/` without Overview nav label ([TR01](./TR01-platform-shell-requirements.md)).
-- Prototype `EventOverview` composite bundles hero + KPIs + launchers; production `DashboardContent` may use separate cards — preserve metrics and links from architecture.
+- Prototype `EventOverview` composite bundles hero + KPIs + launchers; production `DashboardContent` uses the same region order with Contacts, Assignments, and Journal in Additional information.
 - Prototype uses mock `fmtAUD`; production uses event base currency.
 - Master plan launcher in prototype is under itinerary full mode / overview copy — not a separate dashboard launcher (see [TR10](./TR10-master-plan-requirements.md)).
 

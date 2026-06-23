@@ -53,6 +53,14 @@ export function collectMapData(
   return { points, transportLegs };
 }
 
+/** Map points and transport legs for a single day group. */
+export function collectMapDataForDay(
+  dayGroup: ItineraryDayGroup,
+  displayByResourceKey: Record<string, ItineraryResourceDisplay>
+): ItineraryMapData {
+  return collectMapData([dayGroup], displayByResourceKey);
+}
+
 /** Points only — convenience for callers that do not need legs. */
 export function collectMapPoints(
   dayGroups: ItineraryDayGroup[],

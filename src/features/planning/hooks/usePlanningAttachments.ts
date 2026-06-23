@@ -126,6 +126,7 @@ export function usePlanningAttachments(tableName: LogisticsTableName, recordId: 
     uploadFile,
     removeAttachment,
     isUploading: uploadMutation.isPending,
+    isDeleting: deleteMutation.isPending,
     uploadError: uploadMutation.error,
     deleteError: deleteMutation.error,
   };

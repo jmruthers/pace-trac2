@@ -142,7 +142,7 @@ App source of truth for route → `pageName`: `src/app/navigation/trac-nav-defin
 | `/masterplan` | `masterplan` | Printable-style operational summary | SLICE-10 |
 | `*` | — | NotFound (within authenticated shell) | SLICE-01 |
 
-**Primary navigation (max five items per CR05c):** Overview (`/dashboard`), Planning, Itinerary, Risks — inline at `lg+` via pace-core `NavigationMenu`. Assignments, Contacts, Costs, Journal, and Master Plan are **deep-link routes** (event overview launcher / hubs), not primary nav items. `/currency-rates` is RBAC-controlled management and is not in primary nav. Landing context shows a single **Events** item when no event is selected.
+**Primary navigation (max five items per CR05c):** Overview (`/dashboard`), Planning, Itinerary, Costs, Risks — inline at `lg+` via pace-core `NavigationMenu`. Assignments, Contacts, Journal, and Master Plan are **deep-link routes** (event overview launcher / hubs), not primary nav items. `/currency-rates` is RBAC-controlled management and is not in primary nav. Landing context shows a single **Events** item when no event is selected.
 
 **Deferred / not in v1 IA:** Separate participant-only **TRAC** URL (e.g. `/my-itinerary`) — use **role-based content** on `/itinerary` unless product later splits routes. A **portal-hosted** member route that consumes the same participant itinerary contract is allowed and does **not** count as a TRAC IA change.
 
@@ -158,12 +158,12 @@ This section is the **explicit v1 contract** for TRAC composite surfaces. It is 
 |------|-------------|
 | **Route gating** | Event-scoped route behind pace-core2 **`ProtectedRoute requireEvent`** with one approved no-event fallback for TRAC. |
 | **Header** | Event title, event logo, and optional tagline / supporting text from event metadata. |
-| **Planning card** | Links to `/planning`; shows **confirmed vs total** counts for activities, transport, and accommodation using **`trac_status`**. |
-| **Itinerary card** | Links to `/itinerary`; shows **earliest and latest** visible itinerary dates from the SLICE-05 derived day-entry model, or explicit empty state. |
-| **Costs card** | Links to `/costs`; shows event total and a per-participant amount using the shared SLICE-07 rollup, **event base currency**, and the **approved application count** for the active event as the overall participant denominator. |
+| **KPI row** | Planning confirmed/total (aggregate across transport, accommodation, activity), itinerary visible date span, event total cost + per-participant (SLICE-07 rollup, event base currency), open risks count. |
+| **Hero actions** | Primary **Open planning** → `/planning`; secondary **View itinerary** → `/itinerary`. |
+| **Costs access** | Primary nav item **Costs** → `/costs` (not a dashboard launcher card). |
 | **Contacts card** | Links to `/contacts`; shows contact count. |
 | **Assignments link** | Lightweight link to `/assignments`; no additional assignment aggregate required for v1. |
-| **Partial failure policy** | **Hybrid policy.** Route/event gating failures are handled at the **route/shell** level via `ProtectedRoute requireEvent`. Once route access is established, **event identity/header data is critical**: if selected-event metadata required for page identity cannot load, show a page-level error state. After header identity is established, cards degrade **independently**. A failure in one upstream aggregate must not blank the whole page. Failed cards show inline error/retry messaging; successful cards still render. Empty states are not errors. |
+| **Partial failure policy** | **Hybrid policy.** Route/event gating failures are handled at the **route/shell** level via `ProtectedRoute requireEvent`. Once route access is established, **event identity/header data is critical**: if selected-event metadata required for page identity cannot load, show a page-level error state. After header identity is established, launcher cards degrade **independently**. A failure in one upstream aggregate must not blank the whole page. Failed launcher cards show inline error/retry messaging; successful regions still render. Empty states are not errors. KPI row may show neutral placeholders when an aggregate fails; it must not crash the page. |
 | **Permissions** | Page content guarded by **`PagePermissionGuard pageName=\"dashboard\" operation=\"read\"`** once the required TRAC page registration / permission seeding prerequisite is present on dev-db. |
 
 ### Master Plan

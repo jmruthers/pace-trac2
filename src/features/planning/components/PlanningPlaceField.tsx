@@ -121,7 +121,7 @@ export function PlanningPlaceField({
   }
 
   return (
-    <>
+    <section className="grid gap-2">
       <Label>
         {label}
         {required ? ' *' : ''}
@@ -148,7 +148,6 @@ export function PlanningPlaceField({
           ))}
         </ul>
       ) : null}
-      {value?.displayName ? <p>Saved snapshot: {value.displayName}</p> : null}
-    </>
+    </section>
   );
 }

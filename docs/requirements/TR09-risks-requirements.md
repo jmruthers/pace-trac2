@@ -89,13 +89,13 @@ Legacy allowed manual impact fields in some flows — **rebuild forbids** writin
 ### Layout (prototype parity targets)
 
 - [ ] Register header: **Print** secondary + **Add risk** primary.
-- [ ] Residual risk **5×5 matrix** card above table (counts per likelihood × consequence cell).
+- [x] Residual risk **5×5 matrix** card above table (counts per likelihood × consequence cell).
 - [ ] Status filter tabs (All + each risk status) with counts.
 - [ ] `DataTable`: risk description link, when badge, before/after impact chips, responsible contact, status badge; row activate opens item page.
 - [ ] New risk: full page with `RiskFields` sections (before controls, controls & response, after controls) and read-only `ImpactReadout` blocks.
 - [ ] **Risk item page:** no `BackLink` (breadcrumb-only); `PageHeader` title = risk description; subtitle `{type} · {when} the event`; header status badge + **Delete**.
 - [ ] **Risk item page:** section card includes **Details** head + edit hint (new page has body only, no head).
-- [ ] **Risk matrix:** corner axis label **L ↓ / C →**; section label **Residual risk matrix** above grid.
+- [x] **Risk matrix:** corner axis label **L ↓ / C →**; section label **Residual risk matrix** above grid.
 
 ---
 

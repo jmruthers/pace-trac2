@@ -9,6 +9,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { renderHook } from '@testing-library/react';
 import { parseRiskFormData } from '@/features/risks/risk-schema';
 import type { Risk, RiskFormData } from '@/features/risks/types';
+import { computeImpactScore } from '@/features/risks/risk-ranks';
 import type { RiskConsequence } from '@/features/risks/enums/risk-consequence';
 import type { RiskLikelihood } from '@/features/risks/enums/risk-likelihood';
 
@@ -50,26 +51,6 @@ import { RisksPage } from '@/app/pages/RisksPage';
 const EVENT_ID = 'event-1';
 const ORG_ID = 'org-1';
 
-const LIKELIHOOD_RANK: Record<RiskLikelihood, number> = {
-  Rare: 1,
-  Unlikely: 2,
-  Possible: 3,
-  Likely: 4,
-  'Almost certain': 5,
-};
-
-const CONSEQUENCE_RANK: Record<RiskConsequence, number> = {
-  Insignificant: 1,
-  Minor: 2,
-  Significant: 3,
-  Major: 4,
-  Severe: 5,
-};
-
-function computeImpact(likelihood: RiskLikelihood, consequence: RiskConsequence): number {
-  return LIKELIHOOD_RANK[likelihood] * CONSEQUENCE_RANK[consequence];
-}
-
 function buildRiskRow(
   payload: Record<string, unknown>,
   id = 'risk-new'
@@ -95,8 +76,8 @@ function buildRiskRow(
     likelihood_after,
     consequence_after,
     response: (payload.response as string | null) ?? null,
-    impact_before: computeImpact(likelihood_before, consequence_before),
-    impact_after: computeImpact(likelihood_after, consequence_after),
+    impact_before: computeImpactScore(likelihood_before, consequence_before),
+    impact_after: computeImpactScore(likelihood_after, consequence_after),
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     created_by: null,
@@ -212,8 +193,8 @@ describe('risks integration (SLICE-09)', () => {
     expect(insertPayload).not.toHaveProperty('impact_after');
 
     await waitFor(() => expect(result.current.risks).toHaveLength(1));
-    expect(result.current.risks[0]?.impact_before).toBe(computeImpact('Likely', 'Major'));
-    expect(result.current.risks[0]?.impact_after).toBe(computeImpact('Possible', 'Significant'));
+    expect(result.current.risks[0]?.impact_before).toBe(computeImpactScore('Likely', 'Major'));
+    expect(result.current.risks[0]?.impact_after).toBe(computeImpactScore('Possible', 'Significant'));
   });
 
   it('validation failure: invalid enum rejected', () => {

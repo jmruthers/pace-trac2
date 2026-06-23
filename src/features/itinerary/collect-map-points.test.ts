@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deriveItineraryDayEntries, groupItineraryEntriesByDay } from '@solvera/pace-core/itinerary';
 import { buildDisplayByResourceKey } from '@/features/itinerary/map-logistics-to-itinerary-input';
-import { collectMapData } from '@/features/itinerary/collect-map-points';
+import { collectMapData, collectMapDataForDay } from '@/features/itinerary/collect-map-points';
 import type { TransportRow } from '@/features/planning/types';
 
 const transportRow: TransportRow = {
@@ -62,5 +62,36 @@ describe('collectMapData', () => {
     expect(transportLegs[0]?.from.label).toBe('Sydney');
     expect(transportLegs[0]?.to.label).toBe('London');
     expect(points.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('collectMapDataForDay scopes legs to a single day group', () => {
+    const display = buildDisplayByResourceKey({
+      transport: [transportRow],
+      accommodation: [],
+      activity: [],
+    });
+    const entries = deriveItineraryDayEntries({
+      resources: [
+        {
+          resourceType: 'transport',
+          resourceId: transportRow.id,
+          departureTime: transportRow.departure_time,
+          arrivalTime: transportRow.arrival_time,
+          departureTimezone: transportRow.departure_timezone,
+          arrivalTimezone: transportRow.arrival_timezone,
+        },
+      ],
+      scope: { mode: 'all' },
+    });
+    const dayGroups = groupItineraryEntriesByDay(entries);
+    expect(dayGroups.length).toBeGreaterThanOrEqual(2);
+
+    const firstDay = collectMapDataForDay(dayGroups[0]!, display);
+    const secondDay = collectMapDataForDay(dayGroups[1]!, display);
+    const allDays = collectMapData(dayGroups, display);
+
+    expect(firstDay.transportLegs).toHaveLength(1);
+    expect(secondDay.transportLegs).toHaveLength(1);
+    expect(allDays.transportLegs).toHaveLength(1);
   });
 });

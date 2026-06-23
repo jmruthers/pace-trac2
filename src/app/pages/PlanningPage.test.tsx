@@ -29,30 +29,6 @@ vi.mock('@solvera/pace-core/hooks', async (importOriginal) => {
   };
 });
 
-vi.mock('@/features/planning/hooks/useLogisticsList', () => ({
-  useTransportList: () => ({
-    items: [],
-    isLoading: false,
-    isError: false,
-    error: null,
-    refetch: vi.fn(),
-  }),
-  useAccommodationList: () => ({
-    items: [],
-    isLoading: false,
-    isError: false,
-    error: null,
-    refetch: vi.fn(),
-  }),
-  useActivityList: () => ({
-    items: [],
-    isLoading: false,
-    isError: false,
-    error: null,
-    refetch: vi.fn(),
-  }),
-}));
-
 vi.mock('@/features/planning/context/GoogleMapsPlanningContext', () => ({
   GoogleMapsPlanningProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useGoogleMapsPlanning: () => ({
@@ -63,14 +39,8 @@ vi.mock('@/features/planning/context/GoogleMapsPlanningContext', () => ({
   }),
 }));
 
-vi.mock('@/features/planning/components/TransportList', () => ({
-  TransportList: () => <p>Transport list mock</p>,
-}));
-vi.mock('@/features/planning/components/AccommodationList', () => ({
-  AccommodationList: () => <p>Accommodation list mock</p>,
-}));
-vi.mock('@/features/planning/components/ActivityList', () => ({
-  ActivityList: () => <p>Activity list mock</p>,
+vi.mock('@/features/planning/components/PlanningTable', () => ({
+  PlanningTable: () => <p>Planning table mock</p>,
 }));
 
 function renderPlanningPage() {
@@ -95,11 +65,8 @@ describe('PlanningPage', () => {
     expect(screen.getByText(/point-in-time snapshots/i)).toBeInTheDocument();
   });
 
-  it('renders transport, accommodation, and activity tabs', () => {
+  it('renders planning table', () => {
     renderPlanningPage();
-    expect(screen.getByRole('tab', { name: /Transport/ })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /Accommodation/ })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /Activity/ })).toBeInTheDocument();
-    expect(screen.getByText('Transport list mock')).toBeInTheDocument();
+    expect(screen.getByText('Planning table mock')).toBeInTheDocument();
   });
 });

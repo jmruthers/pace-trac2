@@ -1,14 +1,11 @@
+import type { ResourceSummary } from '@/features/assignments/types';
+import { formatWhen } from '@/features/planning/planning-format';
 import type {
   ActivityRow,
   AccommodationRow,
   LogisticsResourceKind,
   TransportRow,
 } from '@/features/planning/types';
-import type { ResourceSummary } from '@/features/assignments/types';
-
-function formatWhen(iso: string): string {
-  return new Date(iso).toLocaleString();
-}
 
 export function transportSummaryLabel(row: TransportRow): string {
   const number = row.transport_number ? ` — ${row.transport_number}` : '';

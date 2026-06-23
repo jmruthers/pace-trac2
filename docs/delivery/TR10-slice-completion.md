@@ -102,7 +102,7 @@
 |----|--------|----------|
 | F-10-01 | [x] | `MasterPlanHeader` — title, event name, date range, logo |
 | F-10-02 | [x] | `MasterPlanJourneyMap` + transport snapshots |
-| F-10-03 | [x] | `MasterPlanContactsList` |
+| F-10-03 | [x] | `MasterPlanContactsList` — read-only `DataTable` (TR10 contact columns) |
 | F-10-04 | [x] | `MasterPlanCostSummary` + `useCostRollupData` |
 | F-10-05 | [x] | `MasterPlanItinerarySection` + `ItineraryTimezoneNotice` |
 | F-10-06 | [x] code / [ ] manual print | `window.print()` + pace-core print CSS |

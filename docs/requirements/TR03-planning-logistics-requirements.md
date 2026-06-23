@@ -43,7 +43,7 @@ Legacy planning views provided dialogs and lists for transport, accommodation, a
 - **Tabs or sections:** Transport, accommodation, activity — each with list + create/edit/delete.
 - **Enums:** All new/updated rows use `trac_status` (nullable; default `idea` per architecture summary) and `transport_mode` on transport.
 - **Capacity:** `trac_transport`, `trac_accommodation`, `trac_activity` capacity fields edited here; show utilisation hints only if read-only counts are available from assignments (optional display) — **assignment writes stay SLICE-04**.
-- **Costs input model:** Keep support for **both** `group_cost` and `individual_cost` on the same logistics row. UI should stay simple: one primary cost field by default, with the secondary field available when the booking needs both.
+- **Costs input model:** Database retains **both** `group_cost` and `individual_cost` columns. Planning modal UI enforces **one cost basis at a time** (per person **or** for group); saving clears the inactive column. Legacy rows with both values remain valid for rollups (TR07).
 - **Documents:** Transport, accommodation, and activity rows may hold supporting documents (tickets, confirmations, run sheets) using the standard pace-core2 file/attachment lifecycle; do **not** invent a TRAC-specific attachment table or bespoke public URL pattern.
 - **Location:** On place pick / save, persist denormalised place fields on the logistics row; write-through to `trac_location_cache` via **service role / edge** as per platform pattern; **no FK from logistics row to cache as SoT for display**.
 - **Product copy:** Do not imply “live Google data”; snapshots are point-in-time (architecture DEC-083 explainer).
@@ -108,17 +108,24 @@ Authoritative narrative: **`trac-architecture.md`** (database-backed design, DEC
 7. Supporting-document upload/access/delete works from logistics rows using the standard secure file lifecycle, and surfaces storage/reference cleanup failures explicitly.
 8. Successful logistics mutations invalidate dependent itinerary/cost/dashboard/master-plan reads explicitly; refresh correctness does not depend on timing delays or custom browser events.
 
-### Layout (prototype parity targets)
+### Layout (production implementation — pass 2)
 
-- [ ] `PageHeader` with breadcrumb Events → event code → Planning; title **Planning**; primary **Add item** opens new-item route for active type tab.
-- [ ] View switch: **By type** (default) vs **By day** chronological grouping (`itin-viewswitch` / `role-toggle` pattern).
-- [ ] **By type:** `Tabs` for transport / accommodation / activity with per-tab counts; `DataTable` with route/name, start/end times, capacity meter, cost (event total + per-person subline), inline status select, open + delete row actions.
-- [ ] Row name opens **full-page item editor** (not modal); **Add item** opens **full-page new** route with type preselected from active tab.
-- [ ] **By day:** `PlanningDayView` — day sections (`itin-day` / `itin-day-head` with daynum badge + heading + “Day N” subline); per-day `DataTable` columns: **Time**, Name (link), Capacity, Cost, Status, open/delete — not the type-view start/end pair.
-- [ ] **New item page:** `BackLink`; type toggle (transport / accommodation / activity) in `role-toggle` with glyphs (not `Tabs`); `ResourceFields` grid in section card; bottom `PageSaveBar` with cancel + **Create {type}** (not generic Submit).
-- [ ] **Item page:** stacked `item-layout` (single-column grid, gap ~20px) — **Details** `section.card.section-card.item-details` with `ResourceFields`; below it **Assigned people** `section.card.section-card.item-assign` (`AssignPanel` — prototype only; production on `/assignments` per TR04).
-- [ ] Item page shows conditional `PageSaveBar` when dirty (Save + Discard changes); delete with confirmation dialog.
-- [ ] Empty states per resource type with CTA to add first item; delete confirmation warns assignments will be removed.
+- [x] `PageHeader` with breadcrumb Events → event code → Planning; title **Planning**; subtitle describing snapshot behaviour; **no** header Add item (create lives on DataTable toolbar).
+- [x] **Type filter** button row above table: **All** (default) | **Transport** | **Accommodation** | **Activity** — each shows live count; client-side filter on unified row set.
+- [x] Single **`DataTable`** for all logistics rows (transport, accommodation, activity merged), default **grouped by start date** (`startDayKey`); rows without a valid start datetime appear in an **Undated** group at the bottom.
+- [x] DataTable columns (v1): Type, Name, Start, End, Location, Status (badge); hidden/grouping column for date label.
+- [x] DataTable toolbar: search, group-by (date), column visibility, **Create** (opens unified modal), row **Edit** / **Delete** actions.
+- [x] **Create / edit modal** (`PlanningItemDialog`): pace-core `Dialog` with `Tabs` — Transport | Accommodation | Activity. Create: all tabs enabled (default Transport). Edit: tabs visible; only the row’s type tab is enabled.
+- [x] Per-type form fields, Zod validation, Places, attachments, and Save / Cancel / Delete footer unchanged from prior dialog CRUD.
+- [ ] **Future prototype parity (not this slice):** inline status select, capacity meter with assignment counts, cost column, mode/resource glyphs, full-page item routes.
+
+**Implementation delta (pass 2):** Prototype uses full-page new/item routes and separate By type / By day views. Production consolidates to one grouped DataTable + tabbed modal; assignments remain on `/assignments` (TR04).
+
+### Layout (prototype parity targets — deferred)
+
+- [ ] Full-page item editor route (prototype `#/planning/:itemId`).
+- [ ] Full-page new item route with `PageSaveBar` and type toggle glyphs.
+- [ ] Inline status select, capacity meter, and cost columns on list DataTable.
 
 ---
 
@@ -137,20 +144,25 @@ Authoritative narrative: **`trac-architecture.md`** (database-backed design, DEC
 
 ### Planning list (`/planning`)
 
-- `PageHeader`: breadcrumb trail; title **Planning**; subtitle describing logistics workbench; header action **Add item** (navigates to new route for current tab type).
-- **View switch** row below header (`itin-viewswitch`):
-  - `role-toggle` buttons **By type** | **By day** (with filter/clock icons); right-aligned mono caption toggles between “Grouped by resource type” and “Chronological — every row, open to edit”.
-- **By type mode:**
-  - `Tabs` / `TabsList` / `TabsTrigger` for transport, accommodation, activity — each shows count badge.
-  - `DataTable` columns: name/route (with mode glyph or resource glyph + subline), start/end datetime columns, **CapacityMeter** (assigned vs capacity, compact), cost column (event total in base currency + per-person or “group only”), inline **status** control (`StatusBadge` tone + select), row actions (open, delete).
-  - Name/route cell: clickable `res-name-link` — transport shows `ModeGlyph`; other types show `ResourceGlyph`; subline (`rn-sub`) shows mode + transport number (transport) or booking reference / em dash (other types).
-  - Datetime cells: `res-when` with separate date (`d`) and time (`t`) spans.
-  - Cost cell: `cost-cell` — total (`ct`), optional non-AUD `fx-tag`, per-person line (`cp`) or “group only”.
-  - Status: inline `StatusSelect` (tone dot badge + native `<select>`), not read-only badge on list.
-  - Inactive rows: `row-inactive` styling on non-active resources.
-  - Empty state per type with icon, copy, and **Add {singular type}** primary action.
-- **By day mode:** chronological day sections (`PlanningDayView`) — each row links to item page; status and delete affordances preserved.
-- Delete uses `ConfirmationDialog` (destructive) warning that assignments will be removed.
+- `PageHeader`: breadcrumb trail; title **Planning**; subtitle describing logistics workbench and location snapshot behaviour; **no** header create action.
+- **Type filter** row below header: `Button` toggles **All** | **Transport** | **Accommodation** | **Activity** with count in label; filters the unified DataTable client-side.
+- **Single DataTable** (pace-core `DataTable`):
+  - Default **group by start date** via `initialGroupingColumnId` on `startDayKey`; group header shows formatted day heading; **Undated** group for rows missing valid start datetime (sorted last).
+  - Columns: Type, Name, Start, End, Location, Status (`PlanningStatusBadge`).
+  - Toolbar: search, group-by, column visibility, **Create** (`onCreateClick` → unified modal), built-in delete confirmation on row delete.
+  - Row actions: **Edit** (opens modal for row type), **Delete** (RBAC-gated).
+  - Empty state with copy directing user to Create on toolbar.
+- **Create / edit modal** (`PlanningItemDialog`):
+  - `Dialog` + `Tabs` (Transport | Accommodation | Activity); **`DialogContent`** wide layout (`max-w-4xl`).
+  - Two-column form grid per type; full-width spans for mode icon picker, status badge picker, notes, attachments, footer.
+  - Transport **mode**: icon button row (`TransportModeIconPicker`), not a select.
+  - **Status**: selectable badge row (`PlanningStatusPicker`), not a select.
+  - **Currency**: `Select` of event-configured codes (base + `trac_currency_rates` for active event).
+  - **Cost:** toggle **Per person** | **For group** with single amount input; inactive DB column cleared on save.
+  - **Datetimes:** pace-core `DateTimeField` with `timezone` from linked place and `showTimezoneLabel`.
+- Delete uses DataTable built-in confirmation (destructive) on row delete; **dialog-footer Delete** on transport/accommodation/activity edit forms and **supporting-document Delete** in `PlanningAttachmentsSection` each open pace-core `ConfirmationDialog` (`variant="destructive"`, `confirmLabel="Delete"`) before the mutation runs. Assignment cleanup per DB triggers.
+
+**Deferred prototype parity:** separate By type / By day modes, capacity meter, cost column, inline status select, full-page new/item routes — see Layout section.
 
 ### New item (full-page route — prototype `#/events/:code/planning/new/:type`)
 

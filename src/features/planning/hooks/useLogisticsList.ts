@@ -56,9 +56,11 @@ function useLogisticsList<T>(
   const { eventId, isReady } = usePlanningScope();
   const table = LOGISTICS_TABLE_BY_KIND[kind];
 
+  const enabled = Boolean(secureSupabase && isReady && eventId);
+
   const query = useQuery({
     queryKey: planningQueryKeys.resource(kind, eventId ?? ''),
-    enabled: Boolean(secureSupabase && isReady && eventId),
+    enabled,
     queryFn: async (): Promise<T[]> => {
       if (!secureSupabase || !eventId) return [];
       const { data, error } = await secureSupabase
@@ -73,7 +75,7 @@ function useLogisticsList<T>(
 
   return {
     items: query.data ?? [],
-    isLoading: query.isLoading,
+    isLoading: enabled && query.isLoading,
     isError: query.isError,
     error: query.error,
     refetch: query.refetch,

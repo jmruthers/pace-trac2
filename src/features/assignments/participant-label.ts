@@ -2,6 +2,9 @@ import type { ApprovedApplication } from '@/features/assignments/types';
 
 /** Display label for approved application picker rows (minimal PII). */
 export function formatParticipantLabel(app: ApprovedApplication): string {
+  const preferred = app.preferred_name?.trim() ?? '';
+  if (preferred !== '') return preferred;
+
   const first = app.first_name?.trim() ?? '';
   const last = app.surname?.trim() ?? '';
   const combined = `${first} ${last}`.trim();

@@ -25,7 +25,7 @@
 
 Event **contacts** CRUD at `/contacts`: maintain the contact list used across TRAC (including risk register linkage in SLICE-09). Scope is **organisation/event** per brief; permissions via contacts page key. Ensure consistency with risk **contact links** (foreign keys or join table per dev-db — validate with Supabase MCP).
 
-- Prototype reference: list and inline create/edit in `pace-prototype/apps/pace-trac/pages/ContactsPage.jsx` (`ContactForm` swaps list in place — no modal).
+- Prototype reference (layout authority only): `pace-prototype/apps/pace-trac/pages/ContactsPage.jsx` — production uses **`DataTable` CRUD** instead of prototype card grid / inline form (see Visual specification).
 
 ---
 
@@ -87,12 +87,14 @@ Implementation status: see [TR06-slice-completion.md](../delivery/TR06-slice-com
 | 4 | Unauthorised users cannot read or mutate contacts. | **Complete** (shell `read:page.contacts`, `PagePermissionGuard`, mutation `useResourcePermissions`, RLS) |
 | 5 | If inactive/archive semantics exist in schema, active pickers exclude inactive contacts by default and delete-blocking FK failures return actionable guidance. | **Complete (partial AC)** — no `is_active`/archive columns on dev-db (inactive clause N/A); FK `23503` maps to risk-link guidance in `use-contacts` |
 
-### Layout (prototype parity targets)
+### Layout (production — DataTable canonical)
 
-- [ ] `PageHeader` with breadcrumb; title **Contacts**; **Add contact** primary when list visible.
-- [ ] Inline create/edit: `ContactForm` in `Card` replaces list (not dialog) — first name, surname, role (with hint), phone, email; `SaveActions` footer.
-- [ ] List mode: `SearchInput` filter; `contact-grid` of cards with avatar initials, name, role pill, `ContactRow` phone/email lines, edit + delete icon actions.
-- [ ] Empty search vs empty list copy differentiated; delete confirmation dialog.
+- [x] `PageHeader` with event breadcrumb; title **Contacts**; subtitle describing external supporting people.
+- [x] List via `DataTable` inside `Card` with search, sort, pagination, RBAC-gated create, edit, and delete.
+- [x] Columns / form fields: first name, surname, role, phone, email (aligned to `trac_contacts` and `contact-schema.ts`).
+- [x] Create and edit via DataTable dialog CRUD (same field set as prototype; modal instead of inline list swap).
+- [x] Delete confirmation via DataTable built-in confirm dialog before mutation.
+- [x] Empty list guidance when no contacts exist for the event.
 
 ---
 
@@ -107,29 +109,28 @@ Implementation status: see [TR06-slice-completion.md](../delivery/TR06-slice-com
 
 ## Visual specification
 
-### Contacts list (`/contacts`)
+### Contacts list (`/contacts`) — canonical
 
-- `PageHeader`: breadcrumb Events → event → **Contacts**; subtitle describing external supporting people; header **Add contact** (hidden while form surface active).
-- **Search:** `SearchInput` above grid (placeholder **Search contacts**).
-- **Contact cards** (`contact-grid` / `<ul>`):
-  - Avatar initials circle, name (`h3`), role as muted pill.
-  - Body: phone and email via `ContactRow` components when present.
-  - Footer: icon edit + destructive delete.
-- **Empty:** icon + **No contacts found** — different copy for active search vs no contacts yet.
+- `PageHeader`: breadcrumb Events → event → **Contacts**; subtitle describing external supporting people.
+- **`DataTable`** inside `Card`:
+  - Columns: first name, surname, role, phone, email — sortable and searchable where configured.
+  - RBAC via `pageName` contacts page key; create, edit, delete gated by resource permissions.
+  - Built-in search, pagination, and sorting (DataTable features — not standalone `SearchInput`).
+- **Empty:** guidance copy when the event has no contacts yet (above or alongside the table).
+- Prototype card grid (`SearchInput`, `Avatar`, `ContactRow`, `contact-grid`) is **not** used in production.
 
-### Inline create/edit (replaces list — prototype house style)
+### Create / edit
 
-- `Card` with `CardHeader` title **Add contact** or **Edit contact**.
-- `Form` grid: first name, surname (required); role (full width, hint for organisation context); phone; email.
-- `SaveActions` in footer (Save + cancel) — not a separate modal.
+- DataTable dialog CRUD for add and edit (not prototype inline `ContactForm` list swap).
+- Required: first name, surname; optional: role, phone, email — validated by `parseContactFormData` / `contact-schema.ts`.
 
 ### Destructive flows
 
-- `ConfirmationDialog` on delete with contact name in description.
+- DataTable delete confirm dialog before `onDeleteRow` (pace-core `DataTableModals`).
 
-### Implementation delta (pass 2)
+### Prototype reference (historical — not production target)
 
-- Production may use `DataTable` CRUD pattern instead of card grid — preserve field set, inline-vs-modal preference, and search behaviour.
+- Prototype used inline `ContactForm` in `Card`, `SearchInput`, avatar card grid, and `ConfirmationDialog` — superseded by DataTable CRUD above.
 - Prototype route `#/events/:code/contacts`; production flat `/contacts` with header event context.
 
 ---
@@ -162,6 +163,7 @@ Implementation status: see [TR06-slice-completion.md](../delivery/TR06-slice-com
 
 - Do not block SLICE-09 on undocumented contact shapes — resolve schema in brief/MCP first.
 - Do not use production DB.
+- Do not reintroduce prototype card grid, standalone `SearchInput`, or inline list-swap `ContactForm` without a new product decision and requirements update.
 
 ---
 

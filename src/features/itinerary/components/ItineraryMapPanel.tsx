@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { Alert } from '@solvera/pace-core/components';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, LoadingSpinner } from '@solvera/pace-core/components';
 import { useGoogleMapsPlanning } from '@/features/planning/context/GoogleMapsPlanningContext';
 import type { ItineraryMapData } from '@/features/itinerary/collect-map-points';
 
@@ -17,6 +17,11 @@ type MapsMapOptions = {
 
 type MapsMapInstance = {
   fitBounds: (bounds: unknown) => void;
+  getDiv?: () => HTMLElement;
+};
+
+type MapsEventApi = {
+  clearInstanceListeners: (instance: unknown) => void;
 };
 
 type MapsLatLngBounds = {
@@ -73,18 +78,97 @@ function clearMapOverlays(markers: unknown[], polylines: unknown[]) {
   }
 }
 
+function clearMapListeners(map: unknown): void {
+  const mapsEvent = (globalThis as { google?: { maps?: { event?: MapsEventApi } } }).google?.maps
+    ?.event;
+  if (map != null && mapsEvent?.clearInstanceListeners != null) {
+    mapsEvent.clearInstanceListeners(map);
+  }
+}
+
+function destroyMapState(
+  mapRef: { current: unknown },
+  markersRef: { current: unknown[] },
+  polylinesRef: { current: unknown[] }
+): void {
+  clearMapOverlays(markersRef.current, polylinesRef.current);
+  markersRef.current = [];
+  polylinesRef.current = [];
+  if (mapRef.current != null) {
+    clearMapListeners(mapRef.current);
+    mapRef.current = null;
+  }
+}
+
+function mapNeedsRecreate(map: unknown, container: HTMLElement | null): boolean {
+  if (map == null || container == null) return true;
+  const existingMap = map as MapsMapInstance;
+  return existingMap.getDiv?.() !== container;
+}
+
 export function ItineraryMapPanel({ mapData }: ItineraryMapPanelProps) {
   const { isLoaded, isError } = useGoogleMapsPlanning();
-  const containerRef = useRef<HTMLElement | null>(null);
+  const [containerNode, setContainerNode] = useState<HTMLElement | null>(null);
   const mapRef = useRef<unknown>(null);
   const markersRef = useRef<unknown[]>([]);
   const polylinesRef = useRef<unknown[]>([]);
 
+  const assignContainerRef = useCallback((node: HTMLElement | null) => {
+    setContainerNode(node);
+  }, []);
+
   const { points, transportLegs } = mapData;
   const hasMapContent = points.length > 0 || transportLegs.length > 0;
 
+  const mapOverlaySignature = useMemo(
+    () =>
+      [
+        points.length,
+        transportLegs.length,
+        ...points.map((point) => `${point.coordinates.lat},${point.coordinates.lng},${point.label}`),
+        ...transportLegs.map(
+          (leg) =>
+            `${leg.from.coordinates.lat},${leg.from.coordinates.lng},${leg.to.coordinates.lat},${leg.to.coordinates.lng}`
+        ),
+      ].join('|'),
+    [points, transportLegs]
+  );
+
   useEffect(() => {
-    if (!isLoaded || !hasMapContent || containerRef.current == null) return;
+    if (!isLoaded || !hasMapContent) {
+      return () => {
+        destroyMapState(mapRef, markersRef, polylinesRef);
+      };
+    }
+
+    if (containerNode == null) {
+      return;
+    }
+
+    const mapsApi = getMapsApi();
+    if (mapsApi == null) {
+      return () => {
+        destroyMapState(mapRef, markersRef, polylinesRef);
+      };
+    }
+
+    if (mapNeedsRecreate(mapRef.current, containerNode)) {
+      destroyMapState(mapRef, markersRef, polylinesRef);
+      mapRef.current = new mapsApi.maps.Map(containerNode, {
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: true,
+      });
+    }
+
+    return () => {
+      destroyMapState(mapRef, markersRef, polylinesRef);
+    };
+  }, [containerNode, hasMapContent, isLoaded]);
+
+  useEffect(() => {
+    if (!isLoaded || !hasMapContent || mapRef.current == null) return;
+
     const mapsApi = getMapsApi();
     if (mapsApi == null) return;
 
@@ -101,16 +185,8 @@ export function ItineraryMapPanel({ mapData }: ItineraryMapPanelProps) {
       bounds.extend(leg.to.coordinates);
     }
 
-    if (mapRef.current == null) {
-      mapRef.current = new mapsApi.maps.Map(containerRef.current, {
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: true,
-      });
-    }
-
     const map = mapRef.current;
-    (map as { fitBounds: (b: unknown) => void }).fitBounds(bounds);
+    (map as MapsMapInstance).fitBounds(bounds);
 
     for (const point of points) {
       markersRef.current.push(
@@ -130,12 +206,21 @@ export function ItineraryMapPanel({ mapData }: ItineraryMapPanelProps) {
         })
       );
     }
-  }, [isLoaded, hasMapContent, points, transportLegs]);
+
+    return () => {
+      clearMapOverlays(markersRef.current, polylinesRef.current);
+      markersRef.current = [];
+      polylinesRef.current = [];
+    };
+  }, [isLoaded, hasMapContent, mapOverlaySignature, points, transportLegs]);
+
+  if (!hasMapContent) {
+    return null;
+  }
 
   if (isError) {
     return (
       <section aria-label="Itinerary map">
-        <h2>Map</h2>
         <Alert>
           <p>Map could not be loaded. Use the day-by-day list for schedule details.</p>
         </Alert>
@@ -143,21 +228,17 @@ export function ItineraryMapPanel({ mapData }: ItineraryMapPanelProps) {
     );
   }
 
-  if (!hasMapContent) {
-    return (
-      <section aria-label="Itinerary map">
-        <h2>Map</h2>
-        <p>No location coordinates are saved on the visible logistics rows yet.</p>
-      </section>
-    );
-  }
-
   return (
-    <section aria-label="Itinerary map">
-      <h2>Map</h2>
-      <p>Locations use coordinates saved on logistics rows at planning time.</p>
-      {!isLoaded ? <p>Loading map…</p> : null}
-      <article ref={containerRef} className="min-h-64 w-full rounded-md border border-sec-200" />
+    <section aria-label="Itinerary map" className="self-start w-full">
+      <article
+        ref={assignContainerRef}
+        className="grid min-h-64 w-full overflow-hidden rounded-2xl border border-main-300"
+        aria-busy={!isLoaded}
+      >
+        {!isLoaded ? (
+          <LoadingSpinner label="Loading map…" />
+        ) : null}
+      </article>
     </section>
   );
 }

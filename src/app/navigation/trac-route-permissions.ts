@@ -29,9 +29,7 @@ export const TRAC_ROUTE_PERMISSIONS: Record<string, TracRoutePermissionConfig> =
 export const TRAC_SECONDARY_ROUTE_PAGE_IDS: Record<string, string> = {
   '/assignments': TRAC_PAGE_NAMES.planning,
   '/contacts': TRAC_PAGE_NAMES.contacts,
-  '/costs': TRAC_PAGE_NAMES.costs,
   '/journal': TRAC_PAGE_NAMES.journal,
-  '/masterplan': TRAC_PAGE_NAMES.masterplan,
   '/currency-rates': TRAC_PAGE_NAMES.currencyRates,
 };
 

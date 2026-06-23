@@ -32,6 +32,7 @@
 | Nav IA defined; links enabled as routes register | Complete |
 | Navigation permission scaffold (`pageId` on nav items, `routeAccessDenied`, `enforcePermissions`) | Complete |
 | No domain CRUD | Complete |
+| Event landing directory grid (`CardGrid` / `CardGridItem`) | Complete — `TracEventsLandingSection` (2026-06-23) |
 
 ---
 

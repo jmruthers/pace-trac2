@@ -15,7 +15,7 @@
 | F-01-05 | Organisation and event context are available to child routes via pace-core2 providers (or documented successor API). | SLICE-01 §Acceptance criteria 5 |
 | F-01-06 | RBAC secure client is configured once at app entry; domain slices use the same pattern (no parallel raw clients for privileged operations). | SLICE-01 §Rebuild target; SLICE-01 §Acceptance criteria 6 |
 | F-01-07 | Shell renders without requiring domain slices to patch provider internals. | SLICE-01 §Acceptance criteria 7 |
-| F-01-08 | Primary navigation (max five items): Overview, Planning, Itinerary, Risks when an event is active; Events only on landing. Assignments, Contacts, Costs, Journal, Master Plan are deep-link routes. Inline pills at `lg+` per CR05c. | architecture §Information architecture (v1); TR01 |
+| F-01-08 | Primary navigation (max five items): Overview, Planning, Itinerary, Costs, Risks when an event is active; Events only on landing. Assignments, Contacts, Journal, Master Plan are deep-link routes. Inline pills at `lg+` per CR05c. | architecture §Information architecture (v1); TR01 |
 | F-01-09 | Individual nav items may be feature-flagged or hidden until their owning slice ships; routes do not duplicate ownership. | SLICE-01 §Rebuild target |
 | F-01-10 | Authenticated NotFound is shell-owned and reachable even when the user lacks dashboard read permission; it is not wrapped in a dashboard-specific page guard. | SLICE-01 §Rebuild target; architecture §Contracts |
 

@@ -6,5 +6,6 @@ export const TRAC_PRIMARY_NAV_DEFINITIONS: readonly NavigationItem[] = [
   { id: 'overview', label: 'Overview', href: '/dashboard', pageId: TRAC_PAGE_NAMES.dashboard },
   { id: 'planning', label: 'Planning', href: '/planning', pageId: TRAC_PAGE_NAMES.planning },
   { id: 'itinerary', label: 'Itinerary', href: '/itinerary', pageId: TRAC_PAGE_NAMES.itinerary },
+  { id: 'costs', label: 'Costs', href: '/costs', pageId: TRAC_PAGE_NAMES.costs },
   { id: 'risks', label: 'Risks', href: '/risks', pageId: TRAC_PAGE_NAMES.risks },
 ] as const;

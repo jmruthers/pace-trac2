@@ -60,9 +60,11 @@ export function useViewerApplication() {
   const { eventId, isReady } = useItineraryScope();
   const userId = user?.id ?? null;
 
+  const enabled = Boolean(secureSupabase && isReady && eventId && userId);
+
   const query = useQuery({
     queryKey: itineraryQueryKeys.viewerApplication(eventId ?? '', userId ?? ''),
-    enabled: Boolean(secureSupabase && isReady && eventId && userId),
+    enabled,
     queryFn: async (): Promise<ViewerApplication | null> => {
       if (!secureSupabase || !eventId || !userId) return null;
       const result = await resolveApplicantApplication(secureSupabase, eventId, userId);
@@ -76,7 +78,7 @@ export function useViewerApplication() {
 
   return {
     application: query.data ?? null,
-    isLoading: query.isLoading,
+    isLoading: enabled && query.isLoading,
     isError: query.isError,
     error: query.error,
     refetch: query.refetch,

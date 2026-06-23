@@ -63,6 +63,16 @@ vi.mock('@/features/planning/context/GoogleMapsPlanningContext', () => ({
   }),
 }));
 
+vi.mock('@/features/assignments/hooks/useApprovedApplications', () => ({
+  useApprovedApplications: () => ({
+    applications: [],
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}));
+
 vi.mock('@solvera/pace-core/rbac', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@solvera/pace-core/rbac')>();
   return {
@@ -344,8 +354,8 @@ describe('itinerary integration (SLICE-05)', () => {
       expect(screen.getByText(/Your itinerary/i)).toBeInTheDocument();
     });
 
-    expect(screen.getAllByText(/Your Transport: Flight — TR100/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Your Activity: Opening session/i)).toBeInTheDocument();
+    expect(screen.getAllByText('Your Flight — TR100').length).toBeGreaterThan(0);
+    expect(screen.getByText('Your Opening session')).toBeInTheDocument();
   });
 
   it('auth / permission failure (denied role): user without itinerary read sees AccessDenied', () => {
@@ -407,10 +417,10 @@ describe('itinerary integration (SLICE-05)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getAllByText(/Your Transport: Flight — TR100/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Your Flight — TR100').length).toBeGreaterThan(0);
     });
 
-    expect(screen.queryByText(/Your Activity: Opening session/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('Your Opening session')).not.toBeInTheDocument();
   });
 
   it('planner role: shows event itinerary section title', async () => {
@@ -432,6 +442,9 @@ describe('itinerary integration (SLICE-05)', () => {
     await waitFor(() => {
       expect(screen.getByText(/Event itinerary/i)).toBeInTheDocument();
     });
+
+    expect(screen.getAllByText('Flight — TR100').length).toBeGreaterThan(0);
+    expect(screen.getByText('Opening session')).toBeInTheDocument();
   });
 
   it('day visitor role: shows explanatory state instead of silent empty', async () => {

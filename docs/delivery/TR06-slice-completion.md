@@ -52,8 +52,10 @@
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Table with name, role, phone, email | Complete | Columns: first name, surname, role, phone, email |
-| Modal/panel for edit; confirm for delete | Complete | pace-core `DataTable` create/edit dialog + delete confirm |
+| DataTable list (first name, surname, role, phone, email) | Complete | Columns in `ContactsContent`; search, sort, pagination |
+| DataTable dialog create/edit | Complete | Same field set as prototype; modal CRUD |
+| DataTable delete confirm | Complete | Built-in confirm before `onDeleteRow` |
+| Prototype card grid delta | **Closed — N/A** | DataTable canonical per TR06 visual spec (2026-06-23) |
 | Usable on smaller screens | Complete (by contract) | Relies on pace-core `DataTable` responsive behaviour; confirm on manual mobile pass |
 
 ---
@@ -132,7 +134,7 @@ Exports:
 | G2 | Risk picker smoke test | **Remediated** | `useTracContactsPicker`, `ResponsibleContactSelect`, picker contract + select tests |
 | G3 | End-to-end UI test for create dialog validation toast | **Remediated** | `ContactsContent.validation.test.tsx` |
 | G4 | Explicit empty-state copy | **Remediated** | Empty guidance in `ContactsContent`; `ContactsContent.test.tsx` |
-| G5 | `@solvera/pace-core/forms` not imported | None | Visual spec satisfied by `DataTable` inline create/edit; no separate Form surface required |
+| G5 | Prototype card grid vs DataTable | **Closed** | DataTable canonical; TR06 requirements reconciled 2026-06-23 |
 
 **No code blockers** for SLICE-06. Full `/risks` register UI remains **SLICE-09**; contact picker contract is ready.
 
