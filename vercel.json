@@ -1,4 +1,5 @@
 {
+  "installCommand": "bash scripts/install-pace-core.sh && npm ci",
   "rewrites": [
     {
       "source": "/(.*)",
