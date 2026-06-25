@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Dialog,
   DialogBody,
@@ -59,17 +59,15 @@ export function PlanningItemDialog({
   const activityMutations = useActivityMutations();
 
   const [openGeneration, setOpenGeneration] = useState(0);
-  const [createTab, setCreateTab] = useState<LogisticsResourceKind>(kind);
-
-  useEffect(() => {
-    if (open && mode === 'create') {
-      setCreateTab(kind);
-    }
-  }, [open, mode, kind]);
+  const [userCreateTab, setUserCreateTab] = useState<LogisticsResourceKind | null>(null);
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
-      if (next) setOpenGeneration((generation) => generation + 1);
+      if (next) {
+        setOpenGeneration((generation) => generation + 1);
+      } else {
+        setUserCreateTab(null);
+      }
       onOpenChange(next);
     },
     [onOpenChange]
@@ -77,14 +75,14 @@ export function PlanningItemDialog({
 
   const closeDialog = useCallback(() => handleOpenChange(false), [handleOpenChange]);
 
-  const activeTab = mode === 'create' ? createTab : kind;
+  const activeTab = mode === 'create' ? (userCreateTab ?? kind) : kind;
   const isEdit = mode === 'edit';
 
   const handleTabChange = useCallback(
     (value: string) => {
       if (isEdit) return;
       if (value === 'transport' || value === 'accommodation' || value === 'activity') {
-        setCreateTab(value);
+        setUserCreateTab(value);
         onCreateKindChange?.(value);
       }
     },

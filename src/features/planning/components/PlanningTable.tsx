@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Alert,
@@ -62,8 +62,11 @@ export function PlanningTable() {
   const resourceIdParam = searchParams.get('resourceId');
   const editParam = searchParams.get('edit');
 
-  const initialKindFilter = isPlanningKindFilter(kindParam) ? kindParam : 'all';
-  const [kindFilter, setKindFilter] = useState<PlanningKindFilter>(initialKindFilter);
+  const urlKindFilter = isPlanningKindFilter(kindParam) ? kindParam : null;
+  const [localKindFilter, setLocalKindFilter] = useState<PlanningKindFilter>(
+    urlKindFilter ?? 'all'
+  );
+  const kindFilter = urlKindFilter ?? localKindFilter;
   const { rows, kindCounts, isLoading, isError, error } = usePlanningTableRows(kindFilter);
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -102,24 +105,31 @@ export function PlanningTable() {
     );
   }, [setSearchParams]);
 
-  const consumedDeepLinkRef = useRef<string | null>(null);
+  const [consumedDeepLinkKey, setConsumedDeepLinkKey] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isPlanningKindFilter(kindParam) && kindParam !== kindFilter) {
-      setKindFilter(kindParam);
-    }
-  }, [kindParam, kindFilter]);
+  const deepLinkKey =
+    editParam === '1' && resourceIdParam != null ? `${resourceIdParam}:${editParam}` : null;
+  const deepLinkRow =
+    deepLinkKey != null && !isLoading && consumedDeepLinkKey !== deepLinkKey
+      ? (rows.find((row) => row.id === resourceIdParam) ?? null)
+      : null;
+  const isDeepLinkDialogOpen = deepLinkRow != null;
 
-  useEffect(() => {
-    if (editParam !== '1' || resourceIdParam == null || isLoading) return;
-    const deepLinkKey = `${resourceIdParam}:${editParam}`;
-    if (consumedDeepLinkRef.current === deepLinkKey) return;
-    const match = rows.find((row) => row.id === resourceIdParam);
-    if (match == null) return;
-    consumedDeepLinkRef.current = deepLinkKey;
-    openEdit(match);
-    clearDeepLinkParams();
-  }, [editParam, resourceIdParam, rows, isLoading, openEdit, clearDeepLinkParams]);
+  const effectiveDialogOpen = dialogOpen || isDeepLinkDialogOpen;
+  const effectiveDialogMode = isDeepLinkDialogOpen ? 'edit' : dialogMode;
+  const effectiveSelectedRow = isDeepLinkDialogOpen ? deepLinkRow : selectedRow;
+  const effectiveDialogKind = effectiveSelectedRow?.kind ?? dialogKind;
+
+  const handleDialogOpenChange = useCallback(
+    (open: boolean) => {
+      setDialogOpen(open);
+      if (!open && deepLinkKey != null) {
+        setConsumedDeepLinkKey(deepLinkKey);
+        clearDeepLinkParams();
+      }
+    },
+    [clearDeepLinkParams, deepLinkKey]
+  );
 
   const handleDeleteRow = useCallback(
     async (row: PlanningTableRow) => {
@@ -204,7 +214,7 @@ export function PlanningTable() {
     [openEdit]
   );
 
-  const dialogSource = selectedRow ? sourceRowForKind(selectedRow) : {};
+  const dialogSource = effectiveSelectedRow ? sourceRowForKind(effectiveSelectedRow) : {};
 
   return (
     <section className="grid gap-4">
@@ -223,7 +233,12 @@ export function PlanningTable() {
               key={filter}
               type="button"
               variant={kindFilter === filter ? 'default' : 'outline'}
-              onClick={() => setKindFilter(filter)}
+              onClick={() => {
+                setLocalKindFilter(filter);
+                if (urlKindFilter != null) {
+                  clearDeepLinkParams();
+                }
+              }}
             >
               {label} ({kindCounts[filter]})
             </Button>
@@ -251,10 +266,10 @@ export function PlanningTable() {
       />
 
       <PlanningItemDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        mode={dialogMode}
-        kind={dialogKind}
+        open={effectiveDialogOpen}
+        onOpenChange={handleDialogOpenChange}
+        mode={effectiveDialogMode}
+        kind={effectiveDialogKind}
         onCreateKindChange={setDialogKind}
         transport={dialogSource.transport}
         accommodation={dialogSource.accommodation}

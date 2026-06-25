@@ -12,7 +12,7 @@
 
 /* @source directives for Tailwind v4 content scanning (paths relative to this file) */
 @source "./**/*.{js,ts,jsx,tsx}";
-@source "../node_modules/@solvera/pace-core/src/**/*.{js,ts,jsx,tsx}";
+@source "../node_modules/@solvera/pace-core/dist/**/*.{js,ts,jsx,tsx}";
 
 @import "@solvera/pace-core/styles/core.css";
 

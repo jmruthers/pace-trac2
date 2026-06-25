@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { domInclude, resolveAlias, sharedTestOptions } from './vitest.shared.js';
+import { domInclude, resolveAlias, sharedTestOptions, paceCoreSvgMockPlugin } from './vitest.shared.js';
 
 const repoRoot = path.dirname(fileURLToPath(import.meta.url));
 
@@ -36,7 +36,10 @@ const featureCoverageGlobs = [
 
 export default defineConfig({
   configLoader: 'runner',
-  plugins: [react()],
+  plugins: [react(), paceCoreSvgMockPlugin()],
+  ssr: {
+    noExternal: ['@solvera/pace-core'],
+  },
   test: {
     ...sharedTestOptions,
     testTimeout: 10000,

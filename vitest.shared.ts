@@ -49,11 +49,30 @@ export const sharedTestOptions = {
   deps: {
     optimizer: {
       web: {
-        include: ['react', 'react-dom', '@testing-library/react', '@testing-library/user-event'],
+        include: [
+          'react',
+          'react-dom',
+          '@testing-library/react',
+          '@testing-library/user-event',
+          '@solvera/pace-core',
+        ],
       },
     },
   },
 };
+
+/** pace-core dist imports `.svg` assets; Vitest must stub them when pace-core is not file-linked. */
+export function paceCoreSvgMockPlugin() {
+  return {
+    name: 'pace-core-svg-mock',
+    enforce: 'pre' as const,
+    load(id: string) {
+      if (id.endsWith('.svg')) {
+        return 'export default "data:image/svg+xml,pace-core-svg-mock"';
+      }
+    },
+  };
+}
 
 export const unitInclude = ['src/**/*.test.ts', 'src/**/*.spec.ts'];
 

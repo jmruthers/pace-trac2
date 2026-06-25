@@ -10,9 +10,10 @@ import { asPlanningClient } from '@/features/planning/supabase-helpers';
 export function useGoogleMapsRuntime() {
   const secureSupabase = asPlanningClient(useSecureSupabase());
   const [apiKey, setApiKey] = useState<string | null>(null);
-  const [isLoaded, setIsLoaded] = useState(() => isGoogleMapsApiReady());
+  const [asyncLoaded, setAsyncLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
   const mountedRef = useRef(true);
+  const isLoaded = isGoogleMapsApiReady() || asyncLoaded;
 
   useEffect(() => {
     mountedRef.current = true;
@@ -25,7 +26,6 @@ export function useGoogleMapsRuntime() {
     if (!secureSupabase) return;
 
     if (isGoogleMapsApiReady()) {
-      setIsLoaded(true);
       return;
     }
 
@@ -38,7 +38,7 @@ export function useGoogleMapsRuntime() {
         return;
       }
       setApiKey(result.data);
-      setIsLoaded(true);
+      setAsyncLoaded(true);
       setIsError(false);
     });
 

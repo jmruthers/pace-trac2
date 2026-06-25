@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { EmptyState } from '@solvera/pace-core/components';
 import type { ItineraryDayGroup, ItineraryVisibleDateRange } from '@solvera/pace-core/itinerary';
 import { getEntryDisplay } from '@/features/itinerary/build-itinerary-model';
@@ -60,59 +60,17 @@ function ItineraryEntryList({
   );
 }
 
-function useSelectedItineraryDayKey(
-  visibleDateRange: ItineraryVisibleDateRange | null,
-  dayGroups: ItineraryDayGroup[],
-  timezoneIana?: string | null
-): [string | null, (dayKey: string) => void] {
-  const todayKey = useMemo(() => todayDayKey(timezoneIana), [timezoneIana]);
-  const rangeKey =
-    visibleDateRange != null
-      ? `${visibleDateRange.startDayKey}:${visibleDateRange.endDayKey}`
-      : '';
-  const dayGroupsKey = dayGroups.map((group) => group.dayKey).join(',');
-
-  const defaultDayKey = useMemo(
-    () =>
-      visibleDateRange != null
-        ? resolveDefaultItineraryDayKey({ range: visibleDateRange, todayKey })
-        : null,
-    [visibleDateRange, todayKey]
-  );
-
-  const [selectedDayKey, setSelectedDayKey] = useState<string | null>(defaultDayKey);
-
-  useEffect(() => {
-    setSelectedDayKey(defaultDayKey);
-  }, [defaultDayKey, rangeKey, dayGroupsKey]);
-
-  return [selectedDayKey, setSelectedDayKey];
-}
-
-export function ItineraryDayTimeline({
+function ItineraryDayTimelineBody({
   dayGroups,
   visibleDateRange,
-  timezoneIana,
   displayByResourceKey,
   notesByResourceKey,
   participantView,
   canLinkToPlanning,
   sectionTitle,
-}: ItineraryDayTimelineProps) {
-  const [selectedDayKey, setSelectedDayKey] = useSelectedItineraryDayKey(
-    visibleDateRange,
-    dayGroups,
-    timezoneIana
-  );
-
-  if (visibleDateRange == null || selectedDayKey == null) {
-    return (
-      <section>
-        <h2>{sectionTitle}</h2>
-        <EmptyState title="No itinerary entries to show for this view yet." compact />
-      </section>
-    );
-  }
+  defaultDayKey,
+}: ItineraryDayTimelineProps & { defaultDayKey: string; visibleDateRange: ItineraryVisibleDateRange }) {
+  const [selectedDayKey, setSelectedDayKey] = useState(defaultDayKey);
 
   const selectedGroup =
     dayGroups.find((group) => group.dayKey === selectedDayKey) ?? {
@@ -152,5 +110,51 @@ export function ItineraryDayTimeline({
         </section>
       </article>
     </section>
+  );
+}
+
+export function ItineraryDayTimeline({
+  dayGroups,
+  visibleDateRange,
+  timezoneIana,
+  displayByResourceKey,
+  notesByResourceKey,
+  participantView,
+  canLinkToPlanning,
+  sectionTitle,
+}: ItineraryDayTimelineProps) {
+  const todayKey = useMemo(() => todayDayKey(timezoneIana), [timezoneIana]);
+  const navigationScopeKey =
+    visibleDateRange != null
+      ? `${visibleDateRange.startDayKey}:${visibleDateRange.endDayKey}:${dayGroups.map((group) => group.dayKey).join(',')}`
+      : 'empty';
+
+  const defaultDayKey =
+    visibleDateRange != null
+      ? resolveDefaultItineraryDayKey({ range: visibleDateRange, todayKey })
+      : null;
+
+  if (visibleDateRange == null || defaultDayKey == null) {
+    return (
+      <section>
+        <h2>{sectionTitle}</h2>
+        <EmptyState title="No itinerary entries to show for this view yet." compact />
+      </section>
+    );
+  }
+
+  return (
+    <ItineraryDayTimelineBody
+      key={navigationScopeKey}
+      dayGroups={dayGroups}
+      visibleDateRange={visibleDateRange}
+      timezoneIana={timezoneIana}
+      displayByResourceKey={displayByResourceKey}
+      notesByResourceKey={notesByResourceKey}
+      participantView={participantView}
+      canLinkToPlanning={canLinkToPlanning}
+      sectionTitle={sectionTitle}
+      defaultDayKey={defaultDayKey}
+    />
   );
 }

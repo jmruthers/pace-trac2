@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Alert,
   LoadingSpinner,
@@ -13,6 +13,7 @@ import { ItineraryDayVisitorState } from '@/features/itinerary/components/Itiner
 import { ItineraryParticipantBanner } from '@/features/itinerary/components/ItineraryParticipantBanner';
 import { ItineraryViewSwitcher } from '@/features/itinerary/components/ItineraryViewSwitcher';
 import { useItineraryEventTimezone } from '@/features/itinerary/hooks/useItineraryEventTimezone';
+import { useEventAssignments } from '@/features/itinerary/hooks/useEventAssignments';
 import {
   buildItineraryParticipantOptions,
   resolveDefaultParticipantId,
@@ -32,16 +33,26 @@ export function ItineraryContent() {
   const breadcrumbItems = useTracEventBreadcrumbs('Itinerary');
   const { ianaTimezone } = useItineraryEventTimezone();
   const { applications } = useApprovedApplications();
+  const { assignments } = useEventAssignments();
 
   const [viewMode, setViewMode] = useState<ItineraryViewMode>('planner');
-  const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
+  const [participantSelectionOverride, setSelectedParticipantId] = useState<string | null>(null);
+
+  const participantOptions = useMemo(
+    () => buildItineraryParticipantOptions(applications, assignments),
+    [applications, assignments]
+  );
+
+  const selectedParticipantId = useMemo(
+    () => resolveDefaultParticipantId(participantOptions, participantSelectionOverride),
+    [participantOptions, participantSelectionOverride]
+  );
 
   const {
     audience,
     model,
     effectiveViewMode,
     effectiveParticipantId,
-    assignments,
     isLoading,
     isError,
     error,
@@ -50,23 +61,6 @@ export function ItineraryContent() {
     participantApplicationId: selectedParticipantId,
     eventDefaultTimezone: ianaTimezone,
   });
-
-  const participantOptions = useMemo(
-    () => buildItineraryParticipantOptions(applications, assignments),
-    [applications, assignments]
-  );
-
-  useEffect(() => {
-    setSelectedParticipantId((current) =>
-      resolveDefaultParticipantId(participantOptions, current)
-    );
-  }, [participantOptions]);
-
-  useEffect(() => {
-    if (audience.mode === 'participant') {
-      setViewMode('participant');
-    }
-  }, [audience.mode]);
 
   const participantName = useMemo(() => {
     if (effectiveParticipantId == null) return null;
@@ -112,10 +106,12 @@ export function ItineraryContent() {
       <PageHeader
         breadcrumbItems={breadcrumbItems}
         title="Itinerary"
-        subtitle={subtitleForViewMode(viewMode)}
+        subtitle={subtitleForViewMode(effectiveViewMode)}
       />
 
-      <ItineraryViewSwitcher viewMode={viewMode} onViewModeChange={setViewMode} />
+      {audience.mode !== 'participant' ? (
+        <ItineraryViewSwitcher viewMode={viewMode} onViewModeChange={setViewMode} />
+      ) : null}
 
       {participantView ? (
         <ItineraryParticipantBanner
