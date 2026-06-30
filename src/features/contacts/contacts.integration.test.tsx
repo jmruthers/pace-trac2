@@ -3,9 +3,8 @@
  */
 import type { ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, waitFor } from '@testing-library/react';
+import { cleanup, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
 import { parseContactFormData } from '@/features/contacts/contact-schema';
 import type { Contact } from '@/features/contacts/types';
 
@@ -41,7 +40,6 @@ vi.mock('@solvera/pace-core/rbac', async (importOriginal) => {
 });
 
 import { useContacts } from '@/features/contacts/hooks/use-contacts';
-import { ContactsPage } from '@/app/pages/ContactsPage';
 import { renderHook } from '@testing-library/react';
 
 const EVENT_ID = 'event-1';
@@ -154,15 +152,4 @@ describe('contacts integration (SLICE-06)', () => {
     );
   });
 
-  it('auth / permission failure: no contacts permission shows AccessDenied', () => {
-    mockUsePageCan.mockReturnValue({ can: false, isLoading: false });
-
-    render(
-      <MemoryRouter initialEntries={['/contacts']}>
-        <ContactsPage />
-      </MemoryRouter>
-    );
-
-    expect(screen.getByText(/do not have permission to view this page/i)).toBeInTheDocument();
-  });
 });

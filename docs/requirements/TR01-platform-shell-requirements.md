@@ -41,7 +41,7 @@ Establish the TRAC client on **pace-core2**: Vite + React entry, authentication,
 - **Navigation:** Primary nav order is defined in architecture (Planning → Assignments → Itinerary → …); this slice provides the **shell** and route outlets; individual nav items may be feature-flagged or hidden until their slice ships, but **routes must not duplicate ownership**.
 - **NotFound:** Authenticated `*` route shows a controlled NotFound UI inside the shell (not a blank screen), with navigation back to `/`; it is **shell-owned** and must not depend on dashboard-specific page guards to remain reachable.
 - **RBAC setup:** Call **`setupRBAC`** once at app startup for the TRAC app id; page guards and secure data access then use the same configured client boundary.
-- **Standard RBAC contract only:** Use pace-core2 **`ProtectedRoute`**, **`ProtectedRoute requireEvent`**, **`PagePermissionGuard`**, navigation permission wiring, and secure-client data access as documented in pace-core2 RBAC guidance. Do **not** introduce TRAC-specific page-local permission bypasses or custom no-event fallbacks.
+- **Standard RBAC contract only (map-first):** Use pace-core2 **`ProtectedRoute`**, **`ProtectedRoute requireEvent`**, shell **`routeAccessDenied`** via **`useShellRouteAccessDenied`**, map-driven primary nav (`NavigationMenu` + `pageId` / `permissions` on items), and secure-client data access as documented in pace-core2 RBAC guidance. Reserve **`PagePermissionGuard`** for mutation affordances and scoped-read overrides on feature pages — not for route-level read on registered paths. Do **not** use **`NavigationGuard`** (removed from pace-core). Do **not** introduce TRAC-specific page-local permission bypasses or custom no-event fallbacks.
 - **Prerequisites:** Required TRAC page registration / permission seeding in **`rbac_app_pages`** is a **pre-build prerequisite on dev-db**; this slice names the target guards and page names but does **not** assign seeding work to implementation agents.
 - **No domain data:** This slice does not implement planning, assignments, or other domain CRUD — only the shell and routing contracts.
 
@@ -67,7 +67,8 @@ Establish the TRAC client on **pace-core2**: Vite + React entry, authentication,
 | Auth facade | `@solvera/pace-core` | `UnifiedAuthProvider`, `useUnifiedAuthContext` |
 | Org / event context | `@solvera/pace-core/providers` | `OrganisationServiceProvider`, `EventServiceProvider`, `InactivityServiceProvider` |
 | Protected routing / shell UI | `@solvera/pace-core/components` | `ProtectedRoute`, `PaceLoginPage`, `PaceAppLayout`, `LoadingSpinner`, login/shell/loading components as applicable |
-| RBAC guards / setup | `@solvera/pace-core/rbac` | `setupRBAC`, `PagePermissionGuard`, `NavigationGuard`, `AccessDenied`, `useSecureSupabase` |
+| RBAC guards / setup | `@solvera/pace-core/rbac` | `setupRBAC`, `PagePermissionGuard`, `AccessDenied`, `useShellRouteAccessDenied`, `useSecureSupabase` |
+| Route permission map | `src/app/navigation/trac-route-permissions.ts` | Canonical path → `pageName` + `read` for shell `routeAccessDenied`; primary nav `pageId` map; secondary/deep-link routes |
 | Theming / tokens | `@solvera/pace-core/theming` | App theme attachment if required by shell |
 
 *This slice follows the current pace-core2 shell contract; implementers verify exact symbols against the installed `@solvera/pace-core` package version.*
@@ -116,7 +117,7 @@ This slice does not own `trac_*` domain tables but **must** load RBAC/page metad
 | Boundary | Contract |
 |----------|----------|
 | **Auth** | Session establishment and teardown per pace-core2; no secrets in client bundle |
-| **RBAC** | `check_rbac_permission_with_context`-style enforcement on server; client uses guards aligned to page keys in dev-db |
+| **RBAC** | Server: `check_rbac_permission_with_context`-style enforcement. Client: **`trac-route-permissions.ts`** registry + **`useShellRouteAccessDenied(getTracRoutePermissionForPath)`** on `PaceAppLayout` (`enforcePermissions`, `routeAccessDenied`, `permissionFallback` → `AccessDenied`); primary nav pre-filtered by `NavigationMenu` using each item's `pageId`. **`PagePermissionGuard`** only where a page needs mutation gating or non-default scoped read — not duplicated for registered route read |
 | **Routing** | React Router (or pace-core2 wrapper): public `/login`; protected layout wraps all TRAC feature routes owned by SLICE-02…10; event-scoped routes use pace-core2 `ProtectedRoute requireEvent` |
 | **TRAC app** | Single TRAC application id in RBAC; page keys must match brief + dev-db |
 
@@ -135,7 +136,7 @@ Prototype uses hash routing (`#/…`); production uses `BrowserRouter` paths wit
 | `#/events/:code/planning/new/:type` | *(pass 2 — planning slice)* | Full-page new item |
 | `#/events/:code/planning/:itemId` | *(pass 2 — planning slice)* | Full-page item editor |
 | `#/events/:code/itinerary` | `/itinerary` | Schedule mode |
-| `#/events/:code/itinerary/full` | `/masterplan` or itinerary full mode | See TR10 |
+| `#/events/:code/itinerary/full` | `/masterplan` | See TR10 |
 | `#/events/:code/costs` | `/costs` | Event-scoped |
 | `#/events/:code/costs/currency` | `/currency-rates` | RBAC `currency-rates` page key |
 | `#/events/:code/risks` | `/risks` | Event-scoped |
@@ -185,6 +186,7 @@ Shell-owned pre-event home (not TR02 dashboard cards):
 - `PageHeader`: breadcrumb `pace-trac` → **Events**; title **Choose an event**; subtitle stating how many events the user plans logistics for.
 - **Empty:** `EmptyState` with calendar icon — events from the operator app appear here.
 - **Populated:** `CardGrid` + `CardGridItem` wrapping `TracEventTile` (`EventCard`); columns `{ md: 2, lg: 4 }`; default **4** tiles visible, **Show all (N)** / **Show fewer** toggle when more than four events.
+- **Tile order:** `@solvera/pace-core/events` — `orderEventsForLanding` (CR08 landing contract: upcoming on/after local today ascending, then past descending); visibility filter excludes `is_visible === false`.
 - Each tile: event logo/glyph, date chip, title, date range, venue meta, footer counts (days, participants); click navigates to event overview.
 - **AttentionQueue** below grid: cross-event open risks with warn tone; each item deep-links to that event’s risks register.
 
@@ -197,7 +199,7 @@ Shell-owned pre-event home (not TR02 dashboard cards):
 
 Contacts, Journal, Assignments, and Master plan are **not** primary nav items; they are reached from the event overview launcher grid ([TR02](./TR02-dashboard-requirements.md)). **Costs** is a primary nav item in production (between Itinerary and Risks). Primary nav MUST NOT exceed five items (CR05c).
 
-Nav items must respect RBAC permission wiring (`enforcePermissions` / `routeAccessDenied` on `PaceAppLayout`; per-item `pageId` gating in `NavigationMenu`).
+Nav items must respect map-first RBAC: `PaceAppLayout` with **`enforcePermissions`**, **`routeAccessDenied={useShellRouteAccessDenied(...)}`**, and **`permissionFallback={<AccessDenied />}`**; each `NavigationItem` carries **`pageId`** (or `permissions`) resolved from **`trac-route-permissions.ts`**. Do not wrap nav items in **`NavigationGuard`**.
 
 ### Error and fallback surfaces
 
@@ -235,7 +237,8 @@ Nav items must respect RBAC permission wiring (`enforcePermissions` / `routeAcce
 - Confirm event-scoped routes use one consistent no-event fallback.
 - Confirm NotFound for garbage path.
 - Confirm event landing tile grid and attention queue when auditing against prototype.
-- **Dev-db:** RBAC page rows exist for TRAC for pages referenced by guards in this slice (e.g. dashboard read if guard wraps home).
+- Confirm **`trac-route-permissions.ts`** registers path → `pageName` read map and exports **`getTracRoutePermissionForPath`** for shell wiring.
+- Confirm `PaceAppLayout` uses **`enforcePermissions`**, **`routeAccessDenied`**, and **`permissionFallback`**.
 
 ---
 

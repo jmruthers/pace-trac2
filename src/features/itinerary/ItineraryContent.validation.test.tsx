@@ -142,8 +142,32 @@ function buildValidationMockSupabase() {
       }
       if (table === 'trac_accommodation') return list([]);
       if (table === 'trac_activity') return list([]);
-      if (table === 'trac_itinerary_assignment') return list([]);
-      if (table === 'base_application') return list([]);
+      if (table === 'trac_itinerary_assignment') {
+        return list([
+          {
+            id: 'assign-1',
+            application_id: 'app-viewer-1',
+            resource_type: 'transport',
+            resource_id: 'transport-valid',
+            event_id: 'event-1',
+            organisation_id: 'org-1',
+            notes: null,
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-01T00:00:00Z',
+            created_by: null,
+            updated_by: null,
+          },
+        ]);
+      }
+      if (table === 'base_application') {
+        return list([
+          {
+            id: 'app-viewer-1',
+            event_id: 'event-1',
+            status: 'approved',
+          },
+        ]);
+      }
       return list([]);
     }),
   };

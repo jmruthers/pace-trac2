@@ -1,8 +1,12 @@
 import type { RBACSupabaseClient, SecureSupabaseClient } from '@solvera/pace-core/rbac';
-import type { LooseSingleResult } from '@/lib/postgrest-result-types';
+import type { LooseSingleResult, SupabaseError } from '@/lib/postgrest-result-types';
 
 export type DashboardReadSupabaseClient = {
   from: (table: string) => DashboardReadQueryBuilder;
+  rpc: (
+    fn: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: unknown; error: SupabaseError | null }>;
 };
 
 type DashboardReadAfterEq = {

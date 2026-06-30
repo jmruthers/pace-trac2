@@ -14,15 +14,31 @@ describe('order-trac-events', () => {
     { id: 'hidden', event_date: '2026-09-01', is_visible: false },
   ];
 
-  it('orders visible events by date', () => {
+  it('orders visible upcoming events ascending by date', () => {
     const ordered = orderTracLandingEvents(events);
     expect(ordered.map((event) => event.id)).toEqual(['a', 'b']);
+  });
+
+  it('places upcoming events before past events (landing contract)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-28T12:00:00'));
+    try {
+      const mixed: EventStub[] = [
+        { id: 'cuboree', event_name: 'Cuboree 2026', event_date: '2026-04-01', is_visible: true },
+        { id: 'wsj', event_name: 'WSJ 2027', event_date: '2027-01-08', is_visible: true },
+      ];
+      const ordered = orderTracLandingEvents(mixed);
+      expect(ordered.map((event) => event.id)).toEqual(['wsj', 'cuboree']);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('slices visible events for show-more toggle', () => {
     const ordered = Array.from({ length: 5 }, (_, index) => ({
       id: `evt-${index}`,
       event_date: `2026-${String(index + 1).padStart(2, '0')}-01`,
+      is_visible: true,
     }));
     expect(shouldShowTracEventsToggle(ordered.length)).toBe(true);
     expect(sliceVisibleTracEvents(ordered, false).length).toBe(4);

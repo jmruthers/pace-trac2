@@ -23,8 +23,10 @@ describe('trac-nav', () => {
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/risks')).toBe(true);
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/costs')).toBe(true);
     expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/currency-rates')).toBe(false);
+    expect(SLICE_01_REGISTERED_ROUTE_PATHS.has('/masterplan')).toBe(true);
     const labels = getEnabledTracNavItems().map((item) => item.label);
     expect(labels).toEqual(['Overview', 'Planning', 'Itinerary', 'Costs', 'Risks']);
+    expect(labels).not.toContain('Master plan');
   });
 
   it('shows landing nav when no event is selected', () => {

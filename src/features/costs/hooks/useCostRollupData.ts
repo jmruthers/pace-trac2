@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSecureSupabase } from '@solvera/pace-core/rbac';
 import { computeCostRollup } from '@/features/costs/cost-rollup';
 import { costsQueryKeys } from '@/features/costs/cost-query-keys';
@@ -8,6 +8,7 @@ import { useBaseCurrency } from '@/features/costs/hooks/useBaseCurrency';
 import { useCostsScope } from '@/features/costs/hooks/useCostsScope';
 import { asCostsReadClient } from '@/features/costs/supabase-costs-read-client';
 import type { CostAssignmentRef, CostRollupResult, CurrencyRate } from '@/features/costs/types';
+import { dashboardQueryKeys } from '@/features/dashboard/dashboard-query-keys';
 import { asPlanningClient } from '@/features/planning/supabase-helpers';
 import type { LogisticsResourceKind } from '@/features/planning/types';
 import { LOGISTICS_TABLE_BY_KIND } from '@/features/planning/types';
@@ -46,6 +47,7 @@ async function fetchLogisticsLines(
 }
 
 export function useCostRollupData() {
+  const queryClient = useQueryClient();
   const planningClient = asPlanningClient(useSecureSupabase());
   const costsClient = asCostsReadClient(useSecureSupabase());
   const { eventId, isReady } = useCostsScope();
@@ -62,6 +64,13 @@ export function useCostRollupData() {
     queryFn: async (): Promise<CostRollupResult> => {
       if (!planningClient || !costsClient || !eventId || !baseCurrency) {
         throw new Error('Cost rollup prerequisites not available');
+      }
+
+      const cachedSummary = queryClient.getQueryData<{ rollup: CostRollupResult }>(
+        dashboardQueryKeys.summary(eventId)
+      );
+      if (cachedSummary?.rollup != null) {
+        return cachedSummary.rollup;
       }
 
       const [lines, assignmentsResult, ratesResult, approvedResult] = await Promise.all([

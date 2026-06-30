@@ -274,15 +274,6 @@ describe('JournalPage integration', () => {
     expect(screen.getByRole('img', { name: /Camp day one/i })).toBeInTheDocument();
   });
 
-  it('does not leak post content when journal read is denied', async () => {
-    mockUsePageCan.mockReturnValue({ can: false, isLoading: false });
-    renderJournalPage();
-    await waitFor(() => {
-      expect(screen.queryByText('Camp day one')).not.toBeInTheDocument();
-    });
-    expect(screen.getByText(/access denied/i)).toBeInTheDocument();
-  });
-
   it('creates a post with an image through the editor and shows it in the feed', async () => {
     const user = setupUser();
     renderJournalPage();

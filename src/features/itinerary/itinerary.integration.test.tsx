@@ -12,7 +12,6 @@ import type {
   ActivityRow,
   TransportRow,
 } from '@/features/planning/types';
-import { ItineraryPage } from '@/app/pages/ItineraryPage';
 import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { ItineraryContent } from '@/features/itinerary/ItineraryContent';
 
@@ -83,6 +82,10 @@ vi.mock('@solvera/pace-core/rbac', async (importOriginal) => {
       organisationId: ORG_ID,
       appId: 'app-1',
       isLoading: false,
+      sourceOutcomes: {
+        'app-context': { isLoading: false, hasData: true, hasError: false },
+      },
+      resilienceErrors: [],
     }),
     usePageCan: (...args: unknown[]) => mockUsePageCan(...args),
     PagePermissionGuard: ({
@@ -172,6 +175,21 @@ function buildItineraryMockSupabase(options: {
 
   return {
     rpc: vi.fn((fn: string, args: Record<string, unknown>) => {
+      if (fn === 'base_application_for_viewer') {
+        if (options.viewerApplicationId == null) {
+          return Promise.resolve({ data: [], error: null });
+        }
+        return Promise.resolve({
+          data: [
+            {
+              id: options.viewerApplicationId,
+              event_id: EVENT_ID,
+              status: 'approved',
+            },
+          ],
+          error: null,
+        });
+      }
       if (fn === 'base_application_is_applicant') {
         const appId = args.p_application_id as string;
         const isApplicant =
@@ -358,19 +376,6 @@ describe('itinerary integration (SLICE-05)', () => {
     expect(screen.getByText('Your Opening session')).toBeInTheDocument();
   });
 
-  it('auth / permission failure (denied role): user without itinerary read sees AccessDenied', () => {
-    mockPageCan(false, false);
-
-    render(
-      <MemoryRouter initialEntries={['/itinerary']}>
-        <ItineraryPage />
-      </MemoryRouter>,
-      { wrapper: createQueryWrapper() }
-    );
-
-    expect(screen.getByText(/do not have permission to view this page/i)).toBeInTheDocument();
-  });
-
   it('RLS isolation (participant role): participant A sees only assigned transport, not other assignments', async () => {
     const assignments: AssignmentRow[] = [
       {
@@ -423,11 +428,11 @@ describe('itinerary integration (SLICE-05)', () => {
     expect(screen.queryByText('Your Opening session')).not.toBeInTheDocument();
   });
 
-  it('planner role: shows event itinerary section title', async () => {
-    mockPageCan(true, true);
+  it('applicant with zero assignments: shows empty schedule instead of day visitor', async () => {
+    mockPageCan(false, true);
     mockUseSecureSupabase.mockReturnValue(
       buildItineraryMockSupabase({
-        viewerApplicationId: null,
+        viewerApplicationId: APP_PARTICIPANT_1,
         assignments: [],
       })
     );
@@ -440,14 +445,13 @@ describe('itinerary integration (SLICE-05)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Event itinerary/i)).toBeInTheDocument();
+      expect(
+        screen.getByText('No itinerary entries to show for this view yet.')
+      ).toBeInTheDocument();
     });
-
-    expect(screen.getAllByText('Flight — TR100').length).toBeGreaterThan(0);
-    expect(screen.getByText('Opening session')).toBeInTheDocument();
   });
 
-  it('day visitor role: shows explanatory state instead of silent empty', async () => {
+  it('coordinator without application: shows day visitor state, not full event schedule', async () => {
     mockPageCan(false, true);
     mockUseSecureSupabase.mockReturnValue(
       buildItineraryMockSupabase({

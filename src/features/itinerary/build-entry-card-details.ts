@@ -1,8 +1,11 @@
 import type { DerivedItineraryDayEntry } from '@solvera/pace-core/itinerary';
 import { formatCostAmount } from '@/features/costs/currency-format';
 import {
+  formatEntryInstantForCard,
   formatEntryKind,
   formatEntryTimeShort,
+  formatEntryTimezoneLabel,
+  entryInstantsSpanDifferentLocalDays,
   getAccommodationCardTitle,
   isSameLocalDay,
 } from '@/features/itinerary/format-entry-kind';
@@ -11,10 +14,32 @@ import { formatCapacity } from '@/features/planning/planning-format';
 
 export type EntryDetailLine = { id: string; kind: 'text'; text: string };
 
+export interface EntryTimeColumn {
+  startTime: string;
+  startTimezoneLabel: string;
+  endTime: string | null;
+  endTimezoneLabel: string | null;
+}
+
+function resolveStartTimezone(
+  entry: DerivedItineraryDayEntry,
+  display: ItineraryResourceDisplay
+): string | undefined {
+  return display.startTimezone ?? entry.timezone;
+}
+
+function resolveEndTimezone(display: ItineraryResourceDisplay): string | undefined {
+  return display.endTimezone ?? display.startTimezone ?? undefined;
+}
+
 function resolveSecondaryTimeIso(
   entry: DerivedItineraryDayEntry,
   display: ItineraryResourceDisplay
 ): string | null {
+  if (entry.entryKind === 'arrival' || entry.entryKind === 'finish') {
+    return null;
+  }
+
   if (display.resourceType === 'accommodation') {
     if (
       entry.entryKind === 'check-in' &&
@@ -35,7 +60,10 @@ export function formatEntryTimeRange(
   entry: DerivedItineraryDayEntry,
   display: ItineraryResourceDisplay
 ): string {
-  const primary = formatEntryTimeShort(entry.orderingTimestamp, entry.timezone);
+  const primary = formatEntryTimeShort(
+    entry.orderingTimestamp,
+    resolveStartTimezone(entry, display)
+  );
 
   if (display.resourceType === 'accommodation' && entry.entryKind === 'occupied') {
     return '—';
@@ -43,7 +71,11 @@ export function formatEntryTimeRange(
 
   const secondaryIso = resolveSecondaryTimeIso(entry, display);
   if (secondaryIso != null) {
-    const secondary = formatEntryTimeShort(secondaryIso, entry.timezone);
+    const endZone =
+      display.resourceType === 'transport' || display.resourceType === 'activity'
+        ? resolveEndTimezone(display)
+        : entry.timezone;
+    const secondary = formatEntryTimeShort(secondaryIso, endZone);
     if (primary !== '' && secondary !== '') {
       return `${primary}–${secondary}`;
     }
@@ -58,6 +90,70 @@ export function formatEntryTimeRange(
   }
 
   return primary !== '' ? primary : '—';
+}
+
+/** Start/end time column with a timezone label per instant (transport, activity, same-day accommodation). */
+export function buildEntryTimeColumn(
+  entry: DerivedItineraryDayEntry,
+  display: ItineraryResourceDisplay
+): EntryTimeColumn {
+  const startZone = resolveStartTimezone(entry, display);
+
+  if (display.resourceType === 'accommodation' && entry.entryKind === 'occupied') {
+    return {
+      startTime: '—',
+      startTimezoneLabel: '',
+      endTime: null,
+      endTimezoneLabel: null,
+    };
+  }
+
+  const startTime = formatEntryTimeShort(entry.orderingTimestamp, startZone);
+  const startTimezoneLabel = formatEntryTimezoneLabel(startZone);
+
+  const secondaryIso = resolveSecondaryTimeIso(entry, display);
+  if (secondaryIso == null) {
+    if (display.resourceType === 'accommodation' && entry.entryKind !== 'occupied') {
+      const kindLabel = formatEntryKind(entry.entryKind);
+      return {
+        startTime: startTime !== '' ? `${startTime} (${kindLabel})` : kindLabel,
+        startTimezoneLabel,
+        endTime: null,
+        endTimezoneLabel: null,
+      };
+    }
+
+    return {
+      startTime: startTime !== '' ? startTime : '—',
+      startTimezoneLabel,
+      endTime: null,
+      endTimezoneLabel: null,
+    };
+  }
+
+  const endZone = resolveEndTimezone(display);
+  const crossDay =
+    entry.orderingTimestamp != null &&
+    entryInstantsSpanDifferentLocalDays(
+      entry.orderingTimestamp,
+      secondaryIso,
+      startZone,
+      endZone
+    );
+  const startTimeFormatted = formatEntryInstantForCard(
+    entry.orderingTimestamp,
+    startZone,
+    crossDay
+  );
+  const endTimeFormatted = formatEntryInstantForCard(secondaryIso, endZone, crossDay);
+  const endTimezoneLabel = formatEntryTimezoneLabel(endZone);
+
+  return {
+    startTime: startTimeFormatted !== '' ? startTimeFormatted : '—',
+    startTimezoneLabel,
+    endTime: endTimeFormatted !== '' ? endTimeFormatted : null,
+    endTimezoneLabel: endTimeFormatted !== '' ? endTimezoneLabel : null,
+  };
 }
 
 export function buildEntryTitle(
@@ -130,6 +226,10 @@ export function buildEntryDetailLines(
   entry: DerivedItineraryDayEntry,
   display: ItineraryResourceDisplay
 ): EntryDetailLine[] {
+  if (entry.entryKind === 'arrival' || entry.entryKind === 'finish') {
+    return [];
+  }
+
   const lines: EntryDetailLine[] = [];
 
   const route = buildRouteLine(display);

@@ -1,10 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, LoadingSpinner } from '@solvera/pace-core/components';
-import { useGoogleMapsPlanning } from '@/features/planning/context/GoogleMapsPlanningContext';
+import {
+  GoogleMapsPlanningProvider,
+  useGoogleMapsPlanning,
+} from '@/features/planning/context/GoogleMapsPlanningContext';
 import type { ItineraryMapData } from '@/features/itinerary/collect-map-points';
 
 interface ItineraryMapPanelProps {
   mapData: ItineraryMapData;
+  /** Parent supplies {@link GoogleMapsPlanningProvider} — use on pages with many entry maps. */
+  embedded?: boolean;
+  className?: string;
 }
 
 type LatLngLiteral = { lat: number; lng: number };
@@ -106,7 +112,15 @@ function mapNeedsRecreate(map: unknown, container: HTMLElement | null): boolean 
   return existingMap.getDiv?.() !== container;
 }
 
-export function ItineraryMapPanel({ mapData }: ItineraryMapPanelProps) {
+function triggerMapResize(map: unknown): void {
+  const mapsEvent = (globalThis as { google?: { maps?: { event?: { trigger: (instance: unknown, event: string) => void } } } })
+    .google?.maps?.event;
+  if (map != null && mapsEvent?.trigger != null) {
+    mapsEvent.trigger(map, 'resize');
+  }
+}
+
+function ItineraryMapPanelInner({ mapData, className }: ItineraryMapPanelProps) {
   const { isLoaded, isError } = useGoogleMapsPlanning();
   const [containerNode, setContainerNode] = useState<HTMLElement | null>(null);
   const mapRef = useRef<unknown>(null);
@@ -119,20 +133,6 @@ export function ItineraryMapPanel({ mapData }: ItineraryMapPanelProps) {
 
   const { points, transportLegs } = mapData;
   const hasMapContent = points.length > 0 || transportLegs.length > 0;
-
-  const mapOverlaySignature = useMemo(
-    () =>
-      [
-        points.length,
-        transportLegs.length,
-        ...points.map((point) => `${point.coordinates.lat},${point.coordinates.lng},${point.label}`),
-        ...transportLegs.map(
-          (leg) =>
-            `${leg.from.coordinates.lat},${leg.from.coordinates.lng},${leg.to.coordinates.lat},${leg.to.coordinates.lng}`
-        ),
-      ].join('|'),
-    [points, transportLegs]
-  );
 
   useEffect(() => {
     if (!isLoaded || !hasMapContent) {
@@ -172,15 +172,17 @@ export function ItineraryMapPanel({ mapData }: ItineraryMapPanelProps) {
     const mapsApi = getMapsApi();
     if (mapsApi == null) return;
 
+    const { points: overlayPoints, transportLegs: overlayLegs } = mapData;
+
     clearMapOverlays(markersRef.current, polylinesRef.current);
     markersRef.current = [];
     polylinesRef.current = [];
 
     const bounds = new mapsApi.maps.LatLngBounds();
-    for (const point of points) {
+    for (const point of overlayPoints) {
       bounds.extend(point.coordinates);
     }
-    for (const leg of transportLegs) {
+    for (const leg of overlayLegs) {
       bounds.extend(leg.from.coordinates);
       bounds.extend(leg.to.coordinates);
     }
@@ -188,7 +190,7 @@ export function ItineraryMapPanel({ mapData }: ItineraryMapPanelProps) {
     const map = mapRef.current;
     (map as MapsMapInstance).fitBounds(bounds);
 
-    for (const point of points) {
+    for (const point of overlayPoints) {
       markersRef.current.push(
         new mapsApi.maps.Marker({
           map,
@@ -198,7 +200,7 @@ export function ItineraryMapPanel({ mapData }: ItineraryMapPanelProps) {
       );
     }
 
-    for (const leg of transportLegs) {
+    for (const leg of overlayLegs) {
       polylinesRef.current.push(
         new mapsApi.maps.Polyline({
           map,
@@ -207,16 +209,18 @@ export function ItineraryMapPanel({ mapData }: ItineraryMapPanelProps) {
       );
     }
 
+    const resizeFrame = requestAnimationFrame(() => {
+      triggerMapResize(map);
+      (map as MapsMapInstance).fitBounds(bounds);
+    });
+
     return () => {
+      cancelAnimationFrame(resizeFrame);
       clearMapOverlays(markersRef.current, polylinesRef.current);
       markersRef.current = [];
       polylinesRef.current = [];
     };
-  }, [isLoaded, hasMapContent, mapOverlaySignature, points, transportLegs]);
-
-  if (!hasMapContent) {
-    return null;
-  }
+  }, [isLoaded, hasMapContent, mapData]);
 
   if (isError) {
     return (
@@ -228,17 +232,31 @@ export function ItineraryMapPanel({ mapData }: ItineraryMapPanelProps) {
     );
   }
 
+  const mapSurfaceClassName =
+    className ?? 'min-h-40 w-full overflow-hidden rounded-2xl border border-main-300';
+
   return (
-    <section aria-label="Itinerary map" className="self-start w-full">
-      <article
-        ref={assignContainerRef}
-        className="grid min-h-64 w-full overflow-hidden rounded-2xl border border-main-300"
-        aria-busy={!isLoaded}
-      >
-        {!isLoaded ? (
-          <LoadingSpinner label="Loading map…" />
-        ) : null}
+    <section aria-label="Itinerary map" className="h-full min-h-40 w-full min-w-0 self-stretch">
+      <article ref={assignContainerRef} className={mapSurfaceClassName} aria-busy={!isLoaded}>
+        {!isLoaded ? <LoadingSpinner label="Loading map…" /> : null}
       </article>
     </section>
   );
+}
+
+/** Map panel with lazy Google Maps bootstrap — provider mounts only when coordinates exist. */
+export function ItineraryMapPanel({ mapData, embedded = false, className }: ItineraryMapPanelProps) {
+  const hasMapContent = mapData.points.length > 0 || mapData.transportLegs.length > 0;
+
+  if (!hasMapContent) {
+    return null;
+  }
+
+  const inner = <ItineraryMapPanelInner mapData={mapData} className={className} />;
+
+  if (embedded) {
+    return inner;
+  }
+
+  return <GoogleMapsPlanningProvider>{inner}</GoogleMapsPlanningProvider>;
 }

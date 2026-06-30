@@ -60,7 +60,7 @@ Deliver the **event dashboard** at `/` and `/dashboard`: summary cards that refl
 
 | Need | Import path (expected) |
 |------|------------------------|
-| Guards | `@solvera/pace-core/rbac` — `PagePermissionGuard` for **`dashboard`** page key |
+| Guards | `@solvera/pace-core/rbac` — shell `routeAccessDenied` for **`dashboard`** page key (no page-level read guard) |
 | Layout / cards | `@solvera/pace-core/components` |
 | Event / org context | `@solvera/pace-core/providers` |
 | Auth | `@solvera/pace-core` — `useUnifiedAuthContext` if needed |
@@ -72,10 +72,12 @@ Deliver the **event dashboard** at `/` and `/dashboard`: summary cards that refl
 
 | Table / topic | Notes |
 |---------------|--------|
-| `trac_transport`, `trac_accommodation`, `trac_activity` | Counts by `trac_status`; capacity not required on dashboard card but may inform copy later |
-| `trac_itinerary_assignment` | Optional future metrics; link to `/assignments` |
-| `trac_currency_rates`, cost fields on logistics | For costs card — validate rollups vs brief |
-| `core_events`, event logo storage | Header branding |
+| **`data_trac_dashboard_summary(p_event_id)`** | **Primary read model** for dashboard KPI aggregates (planning counts, open risks, contacts count, cost rollup inputs, itinerary slim rows, assignments, base currency). RBAC: `read:page.DashboardPage` with TRAC app context. |
+| `trac_transport`, `trac_accommodation`, `trac_activity` | Aggregated in RPC by `trac_status` (confirmed vs total) |
+| `trac_itinerary_assignment` | Returned in RPC for itinerary range + cost rollup |
+| `trac_currency_rates`, cost fields on logistics | Returned in RPC; client runs canonical `computeCostRollup` |
+| `trac_contacts` | Count only in RPC (dashboard does not load full contacts list) |
+| `core_events`, `core_file_references` | Header branding via embedded select on `logo_id` |
 | **Supabase MCP (dev-db)** | Validate enums and column names before queries |
 
 ---
@@ -171,12 +173,13 @@ Section heading **Additional information**; navigational cards (`button.launcher
 | External contacts | phone | `/contacts` |
 | Assignments | — | `/assignments` |
 | Journal | book | `/journal` |
+| Master plan | — | `/masterplan` |
 
-Each card: title, optional count (contacts); `p` description. No Planning, Itinerary, or Costs launcher tiles (Costs is primary nav).
+Each card: title, optional count (contacts); `p` description. No Planning, Itinerary, or Costs launcher tiles (Costs is primary nav). **Master plan** requires **`read:page.masterplan`** (card hidden or denied when absent).
 
 ### Architecture v1 dashboard (pass 2 alignment)
 
-Production aligns with prototype layout authority: KPI row + hero actions surface planning, itinerary, and cost metrics; **Costs** is reached via primary nav. Additional information holds Contacts, Assignments, and Journal launcher cards only.
+Production aligns with prototype layout authority: KPI row + hero actions surface planning, itinerary, and cost metrics; **Costs** is reached via primary nav. Additional information holds Contacts, Assignments, Journal, and **Master plan** launcher cards.
 
 ### Loading and errors
 
@@ -188,7 +191,7 @@ Production aligns with prototype layout authority: KPI row + hero actions surfac
 - Prototype route `#/events/:code` with **Overview** in primary nav; production dashboard at `/` without Overview nav label ([TR01](./TR01-platform-shell-requirements.md)).
 - Prototype `EventOverview` composite bundles hero + KPIs + launchers; production `DashboardContent` uses the same region order with Contacts, Assignments, and Journal in Additional information.
 - Prototype uses mock `fmtAUD`; production uses event base currency.
-- Master plan launcher in prototype is under itinerary full mode / overview copy — not a separate dashboard launcher (see [TR10](./TR10-master-plan-requirements.md)).
+- Master plan launcher links to **`/masterplan`** (TR10); not in primary nav ([TR01](./TR01-platform-shell-requirements.md)).
 
 ---
 

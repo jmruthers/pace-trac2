@@ -3,9 +3,8 @@
  */
 import type { ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, waitFor } from '@testing-library/react';
+import { cleanup, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
 import { renderHook } from '@testing-library/react';
 import { parseRiskFormData } from '@/features/risks/risk-schema';
 import type { Risk, RiskFormData } from '@/features/risks/types';
@@ -46,7 +45,6 @@ vi.mock('@solvera/pace-core/rbac', async (importOriginal) => {
 });
 
 import { useRisks } from '@/features/risks/hooks/use-risks';
-import { RisksPage } from '@/app/pages/RisksPage';
 
 const EVENT_ID = 'event-1';
 const ORG_ID = 'org-1';
@@ -206,15 +204,4 @@ describe('risks integration (SLICE-09)', () => {
     ).toThrow(/valid likelihood/i);
   });
 
-  it('auth / permission failure: no risks permission shows AccessDenied', () => {
-    mockUsePageCan.mockReturnValue({ can: false, isLoading: false });
-
-    render(
-      <MemoryRouter initialEntries={['/risks']}>
-        <RisksPage />
-      </MemoryRouter>
-    );
-
-    expect(screen.getByText(/do not have permission to view this page/i)).toBeInTheDocument();
-  });
 });

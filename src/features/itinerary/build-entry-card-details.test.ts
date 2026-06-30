@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { DerivedItineraryDayEntry } from '@solvera/pace-core/itinerary';
 import {
   buildEntryDetailLines,
+  buildEntryTimeColumn,
   buildEntryTitle,
   formatEntryTimeRange,
 } from '@/features/itinerary/build-entry-card-details';
@@ -42,6 +43,8 @@ const transportDisplay: ItineraryResourceDisplay = {
   departureLabel: 'Sydney',
   arrivalLabel: 'London',
   endTime: '2026-06-02T14:00:00.000Z',
+  startTimezone: 'Australia/Sydney',
+  endTimezone: 'Europe/London',
 };
 
 describe('formatEntryTimeRange', () => {
@@ -70,6 +73,32 @@ describe('formatEntryTimeRange', () => {
       checkOutTime: '2026-06-03T10:00:00.000Z',
     };
     expect(formatEntryTimeRange(entry, display)).toBe('—');
+  });
+});
+
+describe('buildEntryTimeColumn', () => {
+  it('shows time-only labels when start and end share a local calendar day', () => {
+    const sameDayDisplay: ItineraryResourceDisplay = {
+      ...transportDisplay,
+      endTime: '2026-06-01T08:00:00.000Z',
+      startTimezone: 'Australia/Sydney',
+      endTimezone: 'Australia/Sydney',
+    };
+    const sameDayEntry: DerivedItineraryDayEntry = {
+      ...transportEntry,
+      orderingTimestamp: '2026-06-01T00:00:00.000Z',
+    };
+    const column = buildEntryTimeColumn(sameDayEntry, sameDayDisplay);
+    expect(column.startTime).toMatch(/^\d{2}:\d{2}$/);
+    expect(column.endTime).toMatch(/^\d{2}:\d{2}$/);
+  });
+
+  it('shows full datetime when departure and arrival fall on different local days', () => {
+    const column = buildEntryTimeColumn(transportEntry, transportDisplay);
+    expect(column.startTime).toMatch(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/);
+    expect(column.endTime).toMatch(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/);
+    expect(column.startTimezoneLabel).toContain('Sydney');
+    expect(column.endTimezoneLabel).toContain('London');
   });
 });
 

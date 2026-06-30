@@ -101,8 +101,8 @@
 - contract (backend-pre-satisfied): Option A logistics `SELECT` — PASS per backend report
 - contract (app lane): `@solvera/pace-core/itinerary` (CR25) in `build-itinerary-model.ts`
 - validate: PASS (6/6 checks)
-- tests: 128+ passed (`build-itinerary-model`, `itinerary.integration`, `ItineraryContent.validation`, `ItineraryPage`, nav)
-- routes: `/itinerary` — planner / participant / day-visitor / dual tabs; read-only; `read:page.itinerary`
+- tests: `build-itinerary-model`, `itinerary.integration` (personal + day visitor + empty schedule), `ItineraryContent.validation`, `ItineraryPage`, nav; removed dual-mode switcher tests
+- routes: `/itinerary` — personal viewer schedule only (`participant` | `day_visitor`); read-only; `read:page.itinerary`; full event on `/masterplan` (TR10)
 - acceptance criteria (TR05 §1–7): **implemented in code** — see completion record; **sign-off pending** P0 manual + P1 MCP
 - rebuild target: **complete in code** after remediation (map legs, same-day stay copy, applicant viewer hook, deep links)
 - testing (TR05 table): scenarios 1–3 **complete**; validation RTL + precedence units **complete**
@@ -162,8 +162,8 @@
 - remediation: `docs/delivery/TR10-remediation-plan.md` (open until manual dev-db + print sign-off)
 - backend freeze: Frozen for this run — see `docs/delivery/trac-backend-ready-report.md` (PASS)
 - validate: PASS (6/6)
-- tests: `master-plan.integration`, `format-event-date-range`, `trac-nav` (`/masterplan` registered)
-- routes: `/masterplan` — `PagePermissionGuard masterplan`; `requireEvent`; read-only composite; `GoogleMapsPlanningProvider`
+- tests: `master-plan.integration`, `format-event-date-range`, `collect-transport-journey-map`, `MasterPlanPage`, `trac-nav` (`/masterplan` registered, not primary nav), dashboard launcher integration
+- routes: `/masterplan` — `PagePermissionGuard masterplan`; `requireEvent`; read-only composite (no maps provider)
 - composite upstream: `docs/requirements/trac-architecture.md` §Composite contracts — Master Plan (header, map, contacts, costs, itinerary)
 - acceptance criteria (TR10 §1–7): **implemented in code** — see completion record; **sign-off pending** P0 manual (print, dev-db RBAC, cost parity vs `/costs`)
 - shared rollup: `useCostRollupData` from SLICE-07 (no duplicate rollup logic)

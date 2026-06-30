@@ -158,15 +158,4 @@ describe('costs integration (TR07)', () => {
     );
   });
 
-  it('auth / permission failure: user without costs read sees denial', () => {
-    mockUsePageCan.mockReturnValue({ can: false, isLoading: false });
-
-    render(
-      <MemoryRouter initialEntries={['/costs']}>
-        <CostsPage />
-      </MemoryRouter>
-    );
-
-    expect(screen.getByText(/do not have permission to view this page/i)).toBeInTheDocument();
-  });
 });

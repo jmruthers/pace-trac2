@@ -82,7 +82,18 @@ vi.mock('@solvera/pace-core/components', async (importOriginal) => {
     return <Outlet />;
   }
 
-  function TestPaceAppLayout({ children }: { children: ReactNode }) {
+  function TestPaceAppLayout({
+    children,
+    routeAccessDenied,
+    permissionFallback,
+  }: {
+    children?: ReactNode;
+    routeAccessDenied?: boolean;
+    permissionFallback?: ReactNode;
+  }) {
+    if (routeAccessDenied === true) {
+      return <>{permissionFallback}</>;
+    }
     return <main>{children}</main>;
   }
 

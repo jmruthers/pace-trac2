@@ -1,80 +1,68 @@
-import { useMemo, useState } from 'react';
 import {
   Alert,
+  EmptyState,
   LoadingSpinner,
   PageHeader,
 } from '@solvera/pace-core/components';
 import { usePaceMain } from '@solvera/pace-core/hooks';
+import { usePageCan, useResolvedScope } from '@solvera/pace-core/rbac';
 import { useTracEventBreadcrumbs } from '@/app/shell/use-trac-event-breadcrumbs';
-import { useApprovedApplications } from '@/features/assignments/hooks/useApprovedApplications';
-import { formatParticipantLabel } from '@/features/assignments/participant-label';
+import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { ItineraryDayTimeline } from '@/features/itinerary/components/ItineraryDayTimeline';
 import { ItineraryDayVisitorState } from '@/features/itinerary/components/ItineraryDayVisitorState';
-import { ItineraryParticipantBanner } from '@/features/itinerary/components/ItineraryParticipantBanner';
-import { ItineraryViewSwitcher } from '@/features/itinerary/components/ItineraryViewSwitcher';
 import { useItineraryEventTimezone } from '@/features/itinerary/hooks/useItineraryEventTimezone';
 import { useEventAssignments } from '@/features/itinerary/hooks/useEventAssignments';
-import {
-  buildItineraryParticipantOptions,
-  resolveDefaultParticipantId,
-} from '@/features/itinerary/itinerary-participant-options';
 import { useItineraryViewModel } from '@/features/itinerary/hooks/useItineraryViewModel';
-import type { ItineraryViewMode } from '@/features/itinerary/types';
 
-function subtitleForViewMode(viewMode: ItineraryViewMode): string {
-  if (viewMode === 'participant') {
-    return 'One participant personal schedule — only assigned transport, accommodation, and activities.';
+const PERSONAL_SUBTITLE =
+  'One participant personal schedule — only assigned transport, accommodation, and activities.';
+
+function formatItineraryLoadError(error: unknown): string {
+  if (error instanceof Error && error.message.trim() !== '') {
+    return error.message;
   }
-  return 'The full event schedule, grouped by day.';
+  return 'Failed to load itinerary';
+}
+
+function formatScopeLoadError(resilienceErrors: { message?: string }[] | undefined): string {
+  const first = (resilienceErrors ?? []).find((entry) => entry.message?.trim() !== '');
+  if (first?.message != null && first.message.trim() !== '') {
+    return first.message;
+  }
+  return 'Event or organisation context could not be loaded. Refresh the page or select the event again.';
+}
+
+function hasItineraryEntries(
+  dayGroups: { entries: unknown[] }[],
+  visibleDateRange: unknown
+): boolean {
+  if (visibleDateRange == null) return false;
+  return dayGroups.some((group) => group.entries.length > 0);
 }
 
 export function ItineraryContent() {
   usePaceMain({ printTitle: 'Itinerary' });
   const breadcrumbItems = useTracEventBreadcrumbs('Itinerary');
+  const resolvedScope = useResolvedScope();
   const { ianaTimezone } = useItineraryEventTimezone();
-  const { applications } = useApprovedApplications();
-  const { assignments } = useEventAssignments();
+  const eventAssignments = useEventAssignments();
+  const { can: canReadPlanning } = usePageCan(TRAC_PAGE_NAMES.planning, 'read');
 
-  const [viewMode, setViewMode] = useState<ItineraryViewMode>('planner');
-  const [participantSelectionOverride, setSelectedParticipantId] = useState<string | null>(null);
-
-  const participantOptions = useMemo(
-    () => buildItineraryParticipantOptions(applications, assignments),
-    [applications, assignments]
-  );
-
-  const selectedParticipantId = useMemo(
-    () => resolveDefaultParticipantId(participantOptions, participantSelectionOverride),
-    [participantOptions, participantSelectionOverride]
-  );
-
-  const {
-    audience,
-    model,
-    effectiveViewMode,
-    effectiveParticipantId,
-    isLoading,
-    isError,
-    error,
-  } = useItineraryViewModel({
-    viewMode,
-    participantApplicationId: selectedParticipantId,
+  const { audience, model, isLoading, isLogisticsLoading, isError, error } = useItineraryViewModel({
     eventDefaultTimezone: ianaTimezone,
+    eventAssignments,
   });
 
-  const participantName = useMemo(() => {
-    if (effectiveParticipantId == null) return null;
-    const app = applications.find((row) => row.id === effectiveParticipantId);
-    return app != null ? formatParticipantLabel(app) : null;
-  }, [applications, effectiveParticipantId]);
+  const scopeLoadFailed =
+    !resolvedScope.isLoading && (resolvedScope.resilienceErrors?.length ?? 0) > 0;
 
-  const showParticipantPicker =
-    effectiveViewMode === 'participant' &&
-    audience.canReadPlanning &&
-    participantOptions.length > 0;
-
-  const participantView = effectiveViewMode === 'participant';
-  const sectionTitle = participantView ? 'Your itinerary' : 'Event itinerary';
+  if (scopeLoadFailed) {
+    return (
+      <Alert variant="destructive" role="alert">
+        <p>{formatScopeLoadError(resolvedScope.resilienceErrors)}</p>
+      </Alert>
+    );
+  }
 
   if (isLoading || audience.isAudiencePending) {
     return (
@@ -87,7 +75,7 @@ export function ItineraryContent() {
   if (isError) {
     return (
       <Alert variant="destructive" role="alert">
-        <p>{error instanceof Error ? error.message : 'Failed to load itinerary'}</p>
+        <p>{formatItineraryLoadError(error)}</p>
       </Alert>
     );
   }
@@ -95,7 +83,7 @@ export function ItineraryContent() {
   if (audience.mode === 'day_visitor') {
     return (
       <section className="grid gap-4">
-        <PageHeader breadcrumbItems={breadcrumbItems} title="Itinerary" subtitle={subtitleForViewMode('participant')} />
+        <PageHeader breadcrumbItems={breadcrumbItems} title="Itinerary" subtitle={PERSONAL_SUBTITLE} />
         <ItineraryDayVisitorState />
       </section>
     );
@@ -103,25 +91,7 @@ export function ItineraryContent() {
 
   return (
     <section className="grid gap-4">
-      <PageHeader
-        breadcrumbItems={breadcrumbItems}
-        title="Itinerary"
-        subtitle={subtitleForViewMode(effectiveViewMode)}
-      />
-
-      {audience.mode !== 'participant' ? (
-        <ItineraryViewSwitcher viewMode={viewMode} onViewModeChange={setViewMode} />
-      ) : null}
-
-      {participantView ? (
-        <ItineraryParticipantBanner
-          participantName={participantName}
-          options={participantOptions}
-          selectedParticipantId={effectiveParticipantId}
-          onSelectParticipantId={setSelectedParticipantId}
-          showPicker={showParticipantPicker}
-        />
-      ) : null}
+      <PageHeader breadcrumbItems={breadcrumbItems} title="Itinerary" subtitle={PERSONAL_SUBTITLE} />
 
       {model != null && model.skippedResources.length > 0 ? (
         <Alert variant="destructive" role="alert">
@@ -139,8 +109,12 @@ export function ItineraryContent() {
         </Alert>
       ) : null}
 
-      {model == null ? (
-        <p>No itinerary data available.</p>
+      {model == null && isLogisticsLoading ? (
+        <section className="grid min-h-[20vh] place-items-center" aria-busy="true">
+          <LoadingSpinner label="Loading itinerary…" />
+        </section>
+      ) : model == null || !hasItineraryEntries(model.dayGroups, model.visibleDateRange) ? (
+        <EmptyState title="No itinerary entries to show for this view yet." compact />
       ) : (
         <ItineraryDayTimeline
           dayGroups={model.dayGroups}
@@ -148,9 +122,9 @@ export function ItineraryContent() {
           timezoneIana={ianaTimezone}
           displayByResourceKey={model.displayByResourceKey}
           notesByResourceKey={model.notesByResourceKey}
-          participantView={participantView}
-          canLinkToPlanning={audience.canReadPlanning}
-          sectionTitle={sectionTitle}
+          participantView
+          canLinkToPlanning={canReadPlanning}
+          sectionTitle="Your itinerary"
         />
       )}
     </section>

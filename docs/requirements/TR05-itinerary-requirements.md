@@ -25,9 +25,9 @@
 
 ## Overview
 
-Implement **`/itinerary`** as a **time-ordered**, **person-aware** read experience: **planners** see schedule, map, and signals across the event; **participants** (with `base_application`) see **their** assigned transport/stays/activities per **RLS** on `trac_itinerary_assignment`. **Day visitors / no application:** explain that personalised logistics are unavailable — avoid empty confusing screens. **Dual role:** prefer **one** `/itinerary` with sections/tabs rather than duplicating routes (architecture). Deep links interoperate with **Planning** and **Assignments** without owning their mutations. For member-facing access, the same participant contract may also be surfaced from **pace-portal2** for a participant already scoped there; this does **not** create a second TRAC route.
+Implement **`/itinerary`** as the signed-in viewer's **personal** schedule only: users with a linked **`base_application`** see **their** assigned transport, accommodation, and activities per **RLS** on `trac_itinerary_assignment` (Option A). **Day visitors / no application:** explain that personalised logistics are unavailable. **Users with an application but zero assignments:** show an empty schedule (`EmptyState`), not the day-visitor message. **Full event schedule** (all logistics regardless of assignments) lives on **`/masterplan`** ([TR10](./TR10-master-plan-requirements.md)). For member-facing access, the same participant contract may also be surfaced from **pace-portal2**; this does **not** create a second TRAC route.
 
-- Prototype reference: schedule and view modes in `pace-prototype/apps/pace-trac/pages/ItineraryPage.jsx` (`mode` schedule — not `full`; see TR10 for master plan mode).
+- Prototype reference: schedule mode in `pace-prototype/apps/pace-trac/pages/ItineraryPage.jsx` (`mode` schedule — not `full`; see TR10 for master plan).
 
 TRAC remains the **business/source authority** for itinerary rules. The executable pure derivation logic for participant narrowing, day-entry expansion, timezone precedence, in-day ordering, and visible date-range/day grouping is consumed from **pace-core2 CR25** rather than re-implemented locally in TRAC.
 
@@ -35,8 +35,8 @@ TRAC remains the **business/source authority** for itinerary rules. The executab
 
 ## Rebuild target
 
-- **Planner view:** Full event itinerary — all relevant logistics rows ordered by the derived day-entry rules below; optional map with legs; links to `/planning` and `/assignments` where helpful.
-- **Participant view:** Show **only** logistics the viewer is assigned to — **assumes Option A RLS** (architecture): participants may **`SELECT`** parent logistics rows **only** when linked by **`trac_itinerary_assignment`** and **`base_application_is_applicant`**; they **cannot** enumerate full event logistics without **`read:page.planning`**. Implementation: join or filter assignments → logistics using normal Supabase reads; RLS enforces scope.
+- **Personal schedule (only mode on this route):** Show **only** logistics the viewer is assigned to — **assumes Option A RLS** (architecture): applicants may **`SELECT`** parent logistics rows **only** when linked by **`trac_itinerary_assignment`**. Implementation: join or filter assignments → logistics using normal Supabase reads; RLS enforces scope. CR25 scope is always `{ mode: 'participant', participantApplicationId: viewerAppId }`.
+- **Coordinators without a personal application:** Day-visitor messaging (no fake rows). Coordinators reach the full event plan via **`/masterplan`** when granted **`read:page.masterplan`**.
 - **Portal-hosted participant entry:** A member-facing portal page may expose the same participant view from an event details / event hub link for users already scoped in **pace-portal2**. This is a **portal route**, not a new TRAC route, and it must not depend on granting participants TRAC **`itinerary`** page permission.
 - **Route guard:** Use **`itinerary`** page key once the required TRAC page registration / permission seeding prerequisite is present on dev-db.
 - **Participant rows:** Clear labelling (“Your transport”, etc.).
@@ -78,7 +78,7 @@ TRAC remains the **business/source authority** for itinerary rules. The executab
 |------|--------|---------|
 | Person awareness | None | Assignment-driven filtering |
 | Data | Event-only resources | Resources ∩ assignments for participants |
-| Routes | Single itinerary | Same URL; role-based content |
+| Routes | Single itinerary | `/itinerary` personal only; full event on `/masterplan` |
 
 ---
 
@@ -106,31 +106,31 @@ TRAC remains the **business/source authority** for itinerary rules. The executab
 
 ## Acceptance criteria
 
-1. Planner sees full event itinerary list and map (when coords present) ordered correctly.
-2. Participant sees **only** rows assigned to them; no other participants’ logistics.
-3. Day visitor sees explanatory state — not silent empty.
+1. Viewer with assignments sees personal itinerary list and map (when coords present) ordered correctly.
+2. Viewer sees **only** rows assigned to them; no other participants’ logistics.
+3. Day visitor (no application) sees explanatory state — not silent empty.
+4. Applicant with zero assignments sees empty schedule — not day-visitor messaging.
 4. No mutation of logistics or assignments on this route.
 5. Per-row timezone display uses `formatInTimeZone` and `formatTimezoneLabel` on entry cards; no page-level timezone disclaimer.
 6. Multi-day transport, activity, and accommodation rows follow the documented day-entry and in-day ordering rules.
 7. TRAC consumes the shared pure **pace-core2 CR25** helper for participant narrowing, day-entry expansion, timezone precedence, in-day ordering, and visible date range/day grouping rather than re-implementing those derivation rules locally.
 
-### Layout (prototype parity targets — schedule modes only)
+### Layout (personal schedule)
 
-- [x] `PageHeader` title **Itinerary**; subtitle varies by active view mode.
-- [x] View switch: **Planner view** | **Participant view** only (two-way toggle).
-- [x] Planner view: **single-day view** with top day navigator (`ItineraryDayNavigator`) — prev/next one calendar day at a time through CR25 `visibleDateRange`; center **Select** jumps to any in-range day; default day is `max(today, firstDayWithEntries)` clamped to range (event timezone when set). Meta row under nav: **Day {n}** badge + item count (`ItineraryDayHeader`).
-- [x] Participant view: info alert banner with dynamic title **Participant itinerary — {name}**; **Viewing as** `Select` inside the alert. Planners may pick any approved application with assignments; pure participants see their own scope only (picker hidden).
-- [x] Entry rows: pace-core `Card` with large resource mark on the far left; `h5` title; two-line time column using `formatInTimeZone` plus `formatTimezoneLabel` caption; `CardContent` body lines (location, cost, notes); status badge; icon-only **Edit** button (SquarePen) in `CardFooter` bottom-right for planners deep-linking to Planning edit dialog.
-- [x] Assignment notes render as info `Badge` inside row meta in participant view only.
-- [x] No page-level timezone disclaimer alert or view-switch footer caption.
+- [ ] `PageHeader` title **Itinerary**; fixed subtitle: personal schedule — assigned rows only.
+- [ ] **No** planner/participant view switch on this route.
+- [ ] **Single-day view** with top day navigator (`ItineraryDayNavigator`) — prev/next one calendar day at a time through CR25 `visibleDateRange`; center **Select** jumps to any in-range day; default day is `max(today, firstDayWithEntries)` clamped to range (event timezone when set). Meta row under nav: **Day {n}** badge + item count (`ItineraryDayHeader`).
+- [ ] Entry rows: pace-core `Card` with large resource mark; `h5` title with **Your** prefix; two-line time column; assignment notes as info `Badge`; optional **Edit** in `CardFooter` when viewer holds **`read:page.planning`** (deep-link to Planning edit dialog for their assigned rows).
+- [ ] Day visitor (no application): `ItineraryDayVisitorState`.
+- [ ] Applicant, zero assignments: `EmptyState` — **No itinerary entries to show for this view yet.**
 
 ---
 
 ## API / Contract
 
 - **Read-only** queries; event-scoped.
-- **Planner:** Direct selects on logistics tables (with **`read:page.planning`**).
-- **Participant:** Direct selects on logistics tables **for assigned resources only** — **assumes Option A** RLS permits reads when an assignment ties the row to the viewer’s `base_application` (see `trac-architecture.md`).
+- **Participant reads:** Direct selects on logistics tables **for assigned resources only** — **assumes Option A** RLS (see `trac-architecture.md`).
+- **Viewer application lookup:** Direct **`SELECT`** on **`base_application`** scoped by **RLS**, or **`base_application_for_viewer(p_event_id)`** when available — returns 0–1 row for the viewer; do **not** list all event applications on this route.
 - **Shared pure derivation helper:** Consume **pace-core2 CR25** for participant-only narrowing support, day-entry expansion, timezone precedence, in-day ordering, and visible date range/day grouping. This helper operates on already-fetched inputs only and is **not** a data-fetching, RBAC, route-guard, or RLS mechanism.
 - **Portal-hosted participant consumption:** Portal may use the same participant-scoped reads under **Option A** for member-facing itinerary viewing; do **not** introduce a TRAC-specific token, public URL, or `SECURITY DEFINER` bypass for this v1 read path.
 - **No Edge write** requirement for core read path.
@@ -141,27 +141,16 @@ TRAC remains the **business/source authority** for itinerary rules. The executab
 
 ### Page chrome
 
-- `PageHeader`: breadcrumb Events → event → **Itinerary**; dynamic subtitle:
-  - Planner: full event schedule grouped by day.
-  - Participant: personal schedule — assigned rows only.
+- `PageHeader`: breadcrumb Events → event → **Itinerary**; subtitle: **One participant personal schedule — only assigned transport, accommodation, and activities.**
 
-### View switch (`itin-viewswitch`)
-
-Two-way toggle:
-
-| Mode | Label |
-|------|-------|
-| Planner | Planner view |
-| Participant | Participant view |
-
-### Planner schedule layout
+### Personal schedule layout
 
 - **Single-day shell:** only the selected calendar day is visible at a time. A top **`ItineraryDayNavigator`** bar (`nav`, grid `auto | 1fr | auto`) provides **Previous day** / **Next day** icon buttons and a full-width center **Select** showing `formatDayHeading(selectedDayKey)`.
 - **Navigation range:** CR25 `visibleDateRange` (`startDayKey` … `endDayKey` inclusive). Prev/next step one calendar day; arrows disable at range ends. Gap days with no entries show the empty-day state.
 - **Default day:** `max(todayKey, startDayKey)` clamped to the range, where `todayKey` uses event IANA timezone when available.
 - **Meta row:** `ItineraryDayHeader` below the navigator — **Day {n}** badge and right-aligned **{n} item(s)** count only (date heading lives in the navigator).
 - **Per-day two-column content:** `grid gap-4 lg:grid-cols-2 lg:items-start` — entry cards in the left column, per-day map in the right column top-aligned with the first card.
-- Entry cards: pace-core `Card` with `CardHeader` (resource mark, time range + timezone, `h5` title, status badge), `CardContent` (route/location, booking reference, cost, capacity, notes — uniform body text), and `CardFooter` with bottom-right **Edit** for planners.
+- Entry cards: pace-core `Card` with `CardHeader` (resource mark, time range + timezone, `h5` title, status badge), `CardContent` (route/location, booking reference, cost, capacity, notes), and optional `CardFooter` with bottom-right **Edit** when viewer holds **`read:page.planning`**.
 - Transport / activity titles: `{Your }{title}` only — no resource-type badge on entry cards.
 - Accommodation titles by CR26 `entryKind`:
   - `check-in` → **Check in at {venue}**
@@ -182,9 +171,7 @@ Two-way toggle:
 
 ### Participant schedule layout
 
-- Single info alert row: explanatory copy + **Viewing as** label + `Select` (planners: approved applications with at least one assignment; pure participants: picker hidden, scoped to viewer application).
-- Same single-day navigator, two-column layout, and `Card` entry list as planner; empty copy differs for participant vs planner where noted above.
-- Planners in participant view filter CR25 scope by the selected application id (not limited to the planner's own application when dual role).
+- Same single-day navigator, two-column layout, and `Card` entry list as above; always participant-scoped to the viewer's application.
 
 ### Map (pass 2)
 
@@ -210,9 +197,8 @@ Two-way toggle:
 
 - Prototype builds day entries with simplified `buildEntries` (not full CR26); production must use **CR26** for derivation per architecture.
 - Prototype stacked `itin-day` sections map to **`ItineraryDayTimeline`** single-day view + **`ItineraryDayNavigator`** (prototype layout intent, not CSS parity).
-- Prototype participant picker uses mock member pool; production uses approved `base_application` rows + RLS Option A.
-- Planners with **`read:page.planning`** may preview any assigned participant via **Viewing as**; RLS still applies to underlying reads for non-planner roles.
-- Planner entry **Edit** navigates to `/planning?kind=&resourceId=&edit=1` and auto-opens the Planning edit dialog.
+- Prototype participant picker and planner/participant toggle are **not** ported; full event plan is **`/masterplan`** (TR10).
+- Optional **Edit** navigates to `/planning?kind=&resourceId=&edit=1` when viewer holds **`read:page.planning`**.
 
 ---
 

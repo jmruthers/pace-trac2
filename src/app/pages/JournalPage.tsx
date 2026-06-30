@@ -11,7 +11,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@solvera/pace-core/components';
-import { PagePermissionGuard, useResourcePermissions } from '@solvera/pace-core/rbac';
+import { AccessDenied, PagePermissionGuard, useResourcePermissions } from '@solvera/pace-core/rbac';
 import { TRAC_PAGE_NAMES } from '@/app/navigation/trac-page-names';
 import { useTracEventBreadcrumbs } from '@/app/shell/use-trac-event-breadcrumbs';
 import type { JournalPost, JournalPostStatus } from '@/types/journal';
@@ -187,10 +187,14 @@ function JournalPageContent() {
 
 export function JournalPage() {
   return (
-    <main>
-      <PagePermissionGuard pageName={TRAC_PAGE_NAMES.journal} operation="read">
+    <PagePermissionGuard
+      pageName={TRAC_PAGE_NAMES.journal}
+      operation="read"
+      fallback={<AccessDenied />}
+    >
+      <main>
         <JournalPageContent />
-      </PagePermissionGuard>
-    </main>
+      </main>
+    </PagePermissionGuard>
   );
 }

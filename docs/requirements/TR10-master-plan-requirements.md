@@ -3,8 +3,6 @@
 **Document status:** Draft — rebuild implementation contract.  
 **Companion authority:** `trac-project-brief.md`, `trac-architecture.md`.
 
-**Withdrawn (2026-06):** Master plan route and SLICE-10 implementation removed from pace-trac2. Prototype **Full plan** mode remains the layout reference only; TRAC v1 delivers itinerary schedule views at `/itinerary` only.
-
 ---
 
 ## Orchestration metadata (canonical)
@@ -25,7 +23,7 @@
 
 ## Overview
 
-**Operational summary** at `/masterplan`: the explicit **v1 composite contract** from `trac-architecture.md`, delivered with **pace-core2** refreshed layout. Includes header (title, event name, date range, logo), **JourneyMap** when transport has dep/arr coordinates, **ContactsList**, cost summary using the **shared SLICE-07 rollup** and **event base currency**, detailed itinerary using the SLICE-05 day-entry model plus **timezone disclaimer**, and **print** via `window.print()` with print-friendly CSS. **Permissions:** **`masterplan`** page key (`read:page.masterplan`) once the required TRAC page registration / permission seeding prerequisite is present on dev-db.
+**Operational summary** at `/masterplan`: the explicit **v1 composite contract** from `trac-architecture.md`, delivered with **pace-core2** refreshed layout. Includes header (title, event name, date range, logo), **interactive journey map** when transport snapshot coordinates exist, **ContactsList**, cost summary using the **shared SLICE-07 rollup** and **event base currency**, detailed itinerary using the SLICE-05 day-entry model plus **timezone disclaimer**, and browser-print-friendly CSS (no in-page print button). **Permissions:** **`masterplan`** page key (`read:page.masterplan`) once the required TRAC page registration / permission seeding prerequisite is present on dev-db.
 
 - Prototype reference: `MasterPlanDoc` in `pace-prototype/apps/pace-trac/pages/MasterPlanPage.jsx`; surfaced as Itinerary **Master plan** mode at `#/events/:code/itinerary/full` (and legacy `#/master-plan` redirect).
 
@@ -34,7 +32,7 @@
 ## Rebuild target
 
 - **Gating:** Event-scoped route behind pace-core2 **`ProtectedRoute requireEvent`** with one approved TRAC no-event fallback; once the route is entered, section loading/error states are handled in-page.
-- **Print:** Master Plan print retained; risks print is **SLICE-09** (separate route).
+- **Print:** Browser print via pace-core print shell CSS variables; no in-page print button on standalone `/masterplan`. Risks print is **SLICE-09** (separate route).
 - **Map:** Uses transport coordinates from **snapshots**; same empty messaging pattern when no coords.
 - **Costs:** Intro copy that refers to overall event participants uses the **approved application count** for the active event. Detailed listings or resource-specific summaries use the **assigned participant count** for the referenced resource. **Currency from event**; use **shared rollup** from SLICE-07.
 - **Itinerary:** Detailed itinerary list using the SLICE-05 day-entry model; timezone disclaimer alert.
@@ -83,7 +81,7 @@
 ## Acceptance criteria
 
 1. With event selected and permission, all sections render per the architecture master plan contract (header, map, contacts, costs, itinerary).
-2. Print invokes without error; print layout hides irrelevant chrome.
+2. Browser print layout hides irrelevant chrome (via pace-core print shell; no dedicated print button required).
 3. Cost summary matches SLICE-07 rollup for same event fixture.
 4. No hard-coded currency strings.
 5. Timezone disclaimer present near itinerary section.
@@ -92,12 +90,12 @@
 
 ### Layout (prototype parity targets — `MasterPlanDoc`)
 
-- [ ] Header band: event glyph/logo, **Master plan · {code}**, event name, tagline; KV grid (dates, organisation, participants, base currency).
-- [ ] **Journey map** section: transport legs list with mode glyph, route name/number, place line, datetime + status.
+- [ ] Header band: event glyph/logo, **Master plan · {code}**, event name, tagline; KV grid (dates via pace-core `formatDate`, organisation **display name**, participants, base currency).
+- [ ] **Journey map** section: interactive Google map of overall transport journey when snapshot coordinates exist; **no** per-leg card list. Empty copy when no mappable coordinates.
 - [ ] **Contact list** section: read-only pace-core `DataTable` (name, role, phone, email) with count in heading; no CRUD toolbar (print-friendly).
-- [ ] **Cost summary** section: per-type amounts, per participant, hero cells for total, accommodation, transport.
-- [ ] **Itinerary** section: day blocks with day number + heading; journey-leg rows per entry (time, resource, place).
-- [ ] Print button triggers `window.print()`; print CSS variables for title/event/app name.
+- [ ] **Cost summary** section: single consolidated grid — transport, accommodation, activities, total event cost, per participant (no duplicate hero/card repetition).
+- [ ] **Itinerary** section: day blocks with day number + pace-core `formatDate` heading; read-only SLICE-05 entry cards (start–end time + timezone label, status, all stored snapshot fields via shared itinerary helpers).
+- [ ] Print CSS variables for title/event/app name (browser print); no Back to itinerary or Print master plan buttons on standalone page.
 - [ ] Legacy hash `#/events/:code/master-plan` resolves to Itinerary full mode with `MasterPlanDoc` (same as `#/itinerary/full`), not a separate master-plan page shell.
 
 ---
@@ -121,9 +119,9 @@ Single scrollable document (`mp-doc`) suitable for print — prototype embeds in
 
 **2. Journey map (`mp-section`)**
 
-- Section title **Journey map** with leg count.
-- `journey` list: each transport leg — mode glyph, route name (+ number), start → end places, date/time stack, status badge.
-- Empty when no transport legs (explicit empty copy in pass 2).
+- Section title **Journey map** with transport leg count when legs exist.
+- Interactive **Google map** (`ItineraryMapPanel`) showing markers and polylines for all transport snapshot coordinates across the event itinerary model. **No** per-leg card list beneath the map.
+- Empty when no mappable coordinates (explicit empty copy).
 
 **3. Contact list**
 
@@ -133,16 +131,16 @@ Single scrollable document (`mp-doc`) suitable for print — prototype embeds in
 
 **4. Cost summary**
 
-- Section title **Cost summary** with base currency in header.
-- KV rows: each resource type amount, **Per participant**.
-- `cost-hero` row: **Total event cost**, highlighted accommodation and transport cells with sublabels.
-- Uses SLICE-07 shared rollup; display event base currency (prototype demo uses AUD formatting).
+- Section title **Cost summary** with base currency in header count label.
+- Single `dl` grid: Transport, Accommodation, Activities, **Total event cost**, **Per participant** — no duplicate Card/hero row repeating the same figures.
+- Uses SLICE-07 shared rollup; display event base currency.
 
 **5. Itinerary**
 
-- Section `h2`: **Itinerary** + `span.mp-num` `{dayCount} days · all times {event.timezone}` (prototype inline disclaimer; no separate alert in doc body).
-- For each day: **Day N** + `fmtDayHeading`; `div.journey` of `journey-leg` rows (mode/resource glyph, name + kind, type/place, time).
-- Architecture `Alert` timezone disclaimer is a **pass-2 production addition** when not embedded in itinerary header copy.
+- Section `h2`: **Itinerary** + count `{dayCount} days · all times {event.timezone}`.
+- Section-level `Alert` timezone disclaimer (TR10 AC5).
+- For each day: **Day N** + pace-core **`formatDate`** day heading.
+- Each entry: shared read-only **`ItineraryEntryRow`** (start–end time range, per-row timezone label, status badge, route/place, booking ref, cost, capacity, notes). No Edit footer on master plan.
 
 ### Prototype routing authority
 
@@ -160,11 +158,10 @@ Inside `div.page-body`:
 
 Master plan mode does **not** hide the view switch; all three toggles remain operable; selecting Planner/Participant navigates back to `#/itinerary` and restores schedule layout. Schedule rows (`itin-day` / `ItinRow`) are **not** rendered in master mode.
 
-### Page chrome when standalone (`MasterPlanPage` — production pass 2 only)
+### Page chrome when standalone (`MasterPlanPage` — production)
 
-- `BackLink` → itinerary schedule view.
-- Top bar: **Print master plan** primary button (`window.print()`).
-- Then `MasterPlanDoc` body.
+- `PageHeader` with breadcrumbs; **no** Back to itinerary link or Print master plan button (discovery via dashboard launcher and shell nav).
+- Then document body sections (header band through itinerary).
 
 ### Itinerary integration (prototype)
 
@@ -178,7 +175,7 @@ Master plan mode does **not** hide the view switch; all three toggles remain ope
 ### Implementation delta (pass 2)
 
 - Prototype: master plan is **Itinerary full mode** + legacy `#/master-plan` redirect; production: dedicated **`/masterplan`** route per architecture (both should render same section stack).
-- Prototype journey map is list-based (not interactive map widget); production **JourneyMap** may add map when coordinates exist — list remains fallback.
+- Production **Journey map** uses interactive Google map when coordinates exist; prototype list-based legs are not shown in production.
 - Prototype shares `buildEntries`/`groupByDay` with itinerary schedule; production must use **CR25** helper for day grouping parity with SLICE-05.
 - Costs section must import SLICE-07 rollup — no duplicate maths.
 

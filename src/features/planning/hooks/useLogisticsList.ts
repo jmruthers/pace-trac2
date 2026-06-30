@@ -1,5 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSecureSupabase } from '@solvera/pace-core/rbac';
+import {
+  isAwaitingQueryResult,
+  withFetchTimeout,
+} from '@/lib/query-loading';
 import { planningQueryKeys } from '@/features/planning/query-keys';
 import { usePlanningScope } from '@/features/planning/hooks/usePlanningScope';
 import { asPlanningClient } from '@/features/planning/supabase-helpers';
@@ -61,13 +65,17 @@ function useLogisticsList<T>(
   const query = useQuery({
     queryKey: planningQueryKeys.resource(kind, eventId ?? ''),
     enabled,
+    staleTime: 30_000,
     queryFn: async (): Promise<T[]> => {
       if (!secureSupabase || !eventId) return [];
-      const { data, error } = await secureSupabase
-        .from(table)
-        .select('*')
-        .eq('event_id', eventId)
-        .order(orderColumn, { ascending: true });
+      const { data, error } = await withFetchTimeout(
+        secureSupabase
+          .from(table)
+          .select('*')
+          .eq('event_id', eventId)
+          .order(orderColumn, { ascending: true }),
+        `${table} list`
+      );
       if (error) throw new Error(error.message);
       return (data ?? []).map((row) => normalize(row));
     },
@@ -75,7 +83,7 @@ function useLogisticsList<T>(
 
   return {
     items: query.data ?? [],
-    isLoading: enabled && query.isLoading,
+    isLoading: isAwaitingQueryResult(query, enabled),
     isError: query.isError,
     error: query.error,
     refetch: query.refetch,

@@ -91,6 +91,8 @@ export function buildTransportDisplay(row: TransportRow): ItineraryResourceDispl
     departureLabel: dep,
     arrivalLabel: arr,
     endTime: row.arrival_time,
+    startTimezone: row.departure_timezone,
+    endTimezone: row.arrival_timezone,
   };
 }
 
@@ -115,6 +117,8 @@ export function buildActivityDisplay(row: ActivityRow): ItineraryResourceDisplay
     startLocationLabel: start,
     finishLocationLabel: finish,
     endTime: row.finish_time,
+    startTimezone: row.start_location_timezone,
+    endTimezone: row.finish_location_timezone,
   };
 }
 

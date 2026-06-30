@@ -1,5 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSecureSupabase } from '@solvera/pace-core/rbac';
+import {
+  isAwaitingQueryResult,
+  withFetchTimeout,
+} from '@/lib/query-loading';
 import { asAssignmentsClient } from '@/features/assignments/supabase-helpers';
 import type { AssignmentRow } from '@/features/assignments/types';
 import { itineraryQueryKeys } from '@/features/itinerary/query-keys';
@@ -32,11 +36,14 @@ export function useEventAssignments() {
     enabled,
     queryFn: async (): Promise<AssignmentRow[]> => {
       if (!secureSupabase || !eventId) return [];
-      const { data, error } = await secureSupabase
-        .from('trac_itinerary_assignment')
-        .select('*')
-        .eq('event_id', eventId)
-        .order('created_at', { ascending: true });
+      const { data, error } = await withFetchTimeout(
+        secureSupabase
+          .from('trac_itinerary_assignment')
+          .select('*')
+          .eq('event_id', eventId)
+          .order('created_at', { ascending: true }),
+        'trac_itinerary_assignment list'
+      );
       if (error) throw new Error(error.message);
       return (data ?? []).map(normalizeAssignment);
     },
@@ -45,7 +52,7 @@ export function useEventAssignments() {
 
   return {
     assignments: query.data ?? [],
-    isLoading: enabled && query.isLoading,
+    isLoading: isAwaitingQueryResult(query, enabled),
     isError: query.isError,
     error: query.error,
     refetch: query.refetch,

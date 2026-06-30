@@ -72,12 +72,20 @@ function ItineraryDayTimelineBody({
 }: ItineraryDayTimelineProps & { defaultDayKey: string; visibleDateRange: ItineraryVisibleDateRange }) {
   const [selectedDayKey, setSelectedDayKey] = useState(defaultDayKey);
 
-  const selectedGroup =
-    dayGroups.find((group) => group.dayKey === selectedDayKey) ?? {
-      dayKey: selectedDayKey,
-      entries: [],
-    };
+  const selectedGroup = useMemo(
+    () =>
+      dayGroups.find((group) => group.dayKey === selectedDayKey) ?? {
+        dayKey: selectedDayKey,
+        entries: [],
+      },
+    [dayGroups, selectedDayKey]
+  );
   const dayIndex = dayIndexInRange(selectedDayKey, visibleDateRange);
+
+  const mapData = useMemo(
+    () => collectMapDataForDay(selectedGroup, displayByResourceKey),
+    [selectedGroup, displayByResourceKey]
+  );
 
   return (
     <section className="grid gap-4">
@@ -104,9 +112,7 @@ function ItineraryDayTimelineBody({
               canLinkToPlanning={canLinkToPlanning}
             />
           )}
-          <ItineraryMapPanel
-            mapData={collectMapDataForDay(selectedGroup, displayByResourceKey)}
-          />
+          <ItineraryMapPanel mapData={mapData} />
         </section>
       </article>
     </section>

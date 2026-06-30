@@ -11,7 +11,6 @@ import { useItineraryViewModel } from '@/features/itinerary/hooks/useItineraryVi
 const mockTransport = vi.fn();
 const mockAccommodation = vi.fn();
 const mockActivity = vi.fn();
-const mockAssignments = vi.fn();
 const mockAudience = vi.fn();
 const mockPlanningScope = vi.fn();
 
@@ -23,10 +22,6 @@ vi.mock('@/features/planning/hooks/useLogisticsList', () => ({
   useTransportList: () => mockTransport(),
   useAccommodationList: () => mockAccommodation(),
   useActivityList: () => mockActivity(),
-}));
-
-vi.mock('@/features/itinerary/hooks/useEventAssignments', () => ({
-  useEventAssignments: () => mockAssignments(),
 }));
 
 vi.mock('@/features/itinerary/hooks/useItineraryAudience', () => ({
@@ -144,6 +139,24 @@ function listState<T>(items: T[]) {
   };
 }
 
+function eventAssignmentsState(
+  overrides: Partial<{
+    assignments: AssignmentRow[];
+    isLoading: boolean;
+    isError: boolean;
+    error: Error | null;
+  }> = {}
+) {
+  return {
+    assignments: assignmentRows,
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+    ...overrides,
+  };
+}
+
 describe('useItineraryViewModel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -154,37 +167,11 @@ describe('useItineraryViewModel', () => {
     mockTransport.mockReturnValue(listState(transportItems));
     mockAccommodation.mockReturnValue(listState(accommodationItems));
     mockActivity.mockReturnValue(listState(activityItems));
-    mockAssignments.mockReturnValue({
-      assignments: assignmentRows,
-      isLoading: false,
-      isError: false,
-      error: null,
-    });
   });
 
-  it('planner tab all: builds model with full event scope', () => {
-    mockAudience.mockReturnValue({
-      mode: 'planner',
-      canReadPlanning: true,
-      participantApplicationId: null,
-      isLoading: false,
-      isError: false,
-      error: null,
-    });
-
-    const { result } = renderHook(() =>
-      useItineraryViewModel({ viewMode: 'planner', participantApplicationId: null })
-    );
-
-    expect(result.current.model).not.toBeNull();
-    expect(result.current.model?.dayGroups.length).toBeGreaterThan(0);
-    expect(result.current.isError).toBe(false);
-  });
-
-  it('participant: forces personal scope and narrows assigned resources', () => {
+  it('participant with assignments narrows to assigned resources only', () => {
     mockAudience.mockReturnValue({
       mode: 'participant',
-      canReadPlanning: false,
       participantApplicationId: 'app-participant-1',
       isLoading: false,
       isError: false,
@@ -193,8 +180,7 @@ describe('useItineraryViewModel', () => {
 
     const { result } = renderHook(() =>
       useItineraryViewModel({
-        viewMode: 'participant',
-        participantApplicationId: 'app-participant-1',
+        eventAssignments: eventAssignmentsState(),
       })
     );
 
@@ -206,11 +192,10 @@ describe('useItineraryViewModel', () => {
     expect(resourceIds.has('accommodation-1')).toBe(false);
   });
 
-  it('planner participant view uses selected application id for scope', () => {
+  it('participant with zero assignments returns empty day groups after logistics load', () => {
     mockAudience.mockReturnValue({
-      mode: 'planner',
-      canReadPlanning: true,
-      participantApplicationId: null,
+      mode: 'participant',
+      participantApplicationId: 'app-participant-1',
       isLoading: false,
       isError: false,
       error: null,
@@ -218,36 +203,17 @@ describe('useItineraryViewModel', () => {
 
     const { result } = renderHook(() =>
       useItineraryViewModel({
-        viewMode: 'participant',
-        participantApplicationId: 'app-participant-1',
+        eventAssignments: eventAssignmentsState({ assignments: [] }),
       })
     );
 
-    expect(result.current.effectiveViewMode).toBe('participant');
-    const resourceIds = new Set(
-      result.current.model?.dayGroups.flatMap((g) => g.entries.map((e) => e.resourceId)) ?? []
-    );
-    expect(resourceIds.has('accommodation-1')).toBe(false);
-    expect(result.current.model?.notesByResourceKey).toEqual({});
+    expect(result.current.model?.dayGroups).toEqual([]);
   });
 
-  it('participant view includes assignment notes for selected participant', () => {
-    mockAssignments.mockReturnValue({
-      assignments: [
-        {
-          ...assignmentRows[0],
-          notes: 'Window seat requested',
-        },
-        assignmentRows[1],
-      ],
-      isLoading: false,
-      isError: false,
-      error: null,
-    });
+  it('includes assignment notes for the viewer application', () => {
     mockAudience.mockReturnValue({
-      mode: 'planner',
-      canReadPlanning: true,
-      participantApplicationId: null,
+      mode: 'participant',
+      participantApplicationId: 'app-participant-1',
       isLoading: false,
       isError: false,
       error: null,
@@ -255,8 +221,15 @@ describe('useItineraryViewModel', () => {
 
     const { result } = renderHook(() =>
       useItineraryViewModel({
-        viewMode: 'participant',
-        participantApplicationId: 'app-participant-1',
+        eventAssignments: eventAssignmentsState({
+          assignments: [
+            {
+              ...assignmentRows[0],
+              notes: 'Window seat requested',
+            },
+            assignmentRows[1],
+          ],
+        }),
       })
     );
 
@@ -268,7 +241,6 @@ describe('useItineraryViewModel', () => {
   it('day visitor: no itinerary model', () => {
     mockAudience.mockReturnValue({
       mode: 'day_visitor',
-      canReadPlanning: false,
       participantApplicationId: null,
       isLoading: false,
       isError: false,
@@ -276,9 +248,30 @@ describe('useItineraryViewModel', () => {
     });
 
     const { result } = renderHook(() =>
-      useItineraryViewModel({ viewMode: 'planner', participantApplicationId: null })
+      useItineraryViewModel({
+        eventAssignments: eventAssignmentsState(),
+      })
     );
 
+    expect(result.current.model).toBeNull();
+  });
+
+  it('waits on assignments before building participant model', () => {
+    mockAudience.mockReturnValue({
+      mode: 'participant',
+      participantApplicationId: 'app-participant-1',
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+
+    const { result } = renderHook(() =>
+      useItineraryViewModel({
+        eventAssignments: eventAssignmentsState({ isLoading: true }),
+      })
+    );
+
+    expect(result.current.isLogisticsLoading).toBe(true);
     expect(result.current.model).toBeNull();
   });
 });

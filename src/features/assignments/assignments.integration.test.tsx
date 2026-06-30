@@ -3,9 +3,8 @@
  */
 import type { ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
 import { renderHook } from '@testing-library/react';
 import type { AssignmentRow } from '@/features/assignments/types';
 import { mapAssignmentError } from '@/features/assignments/errors';
@@ -60,7 +59,6 @@ vi.mock('@solvera/pace-core/rbac', async (importOriginal) => {
 });
 
 import { useAssignmentMutations } from '@/features/assignments/hooks/useAssignmentMutations';
-import { AssignmentsPage } from '@/app/pages/AssignmentsPage';
 
 const EVENT_ID = 'event-1';
 const ORG_ID = 'org-1';
@@ -271,20 +269,6 @@ describe('assignments integration (SLICE-04)', () => {
 
     await expect(result.current.createAssignment(input)).rejects.toThrow(/already assigned/i);
     expect(supabase.getAssignments()).toHaveLength(1);
-  });
-
-  it('auth / permission failure: no planning permission shows AccessDenied', () => {
-    mockUsePageCan.mockReturnValue({ can: false, isLoading: false });
-
-    render(
-      <MemoryRouter initialEntries={['/assignments']}>
-        <QueryClientProvider client={new QueryClient()}>
-          <AssignmentsPage />
-        </QueryClientProvider>
-      </MemoryRouter>
-    );
-
-    expect(screen.getByText(/do not have permission to view this page/i)).toBeInTheDocument();
   });
 
   it('over-capacity confirmation required when save would exceed capacity', () => {

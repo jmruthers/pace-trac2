@@ -8,6 +8,7 @@ export const TRAC_PAGE_NAMES = {
   journal: 'JournalPage',
   risks: 'RisksPage',
   currencyRates: 'CurrencyRatesPage',
+  masterplan: 'MasterplanPage',
 } as const;
 
 export type TracPageName = (typeof TRAC_PAGE_NAMES)[keyof typeof TRAC_PAGE_NAMES];

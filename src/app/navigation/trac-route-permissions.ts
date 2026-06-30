@@ -31,10 +31,19 @@ export const TRAC_SECONDARY_ROUTE_PAGE_IDS: Record<string, string> = {
   '/contacts': TRAC_PAGE_NAMES.contacts,
   '/journal': TRAC_PAGE_NAMES.journal,
   '/currency-rates': TRAC_PAGE_NAMES.currencyRates,
+  '/masterplan': TRAC_PAGE_NAMES.masterplan,
 };
 
-/** Route path → read operation for shell route checks (excludes `/` and `/dashboard`). */
+/** Routes where React file stem differs from RBAC pageName (shell audit). */
+export const TRAC_SHELL_PAGE_STEM_ENTRIES = [
+  { path: '/', pageStem: 'TracEventsLandingPage' },
+  { path: '/assignments', pageStem: 'AssignmentsPage' },
+  { path: '/masterplan', pageStem: 'MasterPlanPage' },
+] as const;
+
+/** Route path → read operation for shell route checks (includes `/` landing). */
 export const TRAC_ROUTE_PATH_PERMISSIONS: Record<string, TracRoutePermissionOperation> = {
+  '/': 'read',
   ...Object.fromEntries(
     TRAC_PRIMARY_NAV_DEFINITIONS.filter((item) => item.href != null).map((item) => [item.href!, 'read'])
   ),
@@ -55,6 +64,10 @@ export const TRAC_PAGE_ID_MAPPING: Record<string, string> = {
 export function getTracRoutePermissionForPath(pathname: string): TracRoutePermissionConfig | undefined {
   const operation = TRAC_ROUTE_PATH_PERMISSIONS[pathname];
   if (operation == null) return undefined;
+
+  if (pathname === '/') {
+    return { pageName: TRAC_PAGE_NAMES.dashboard, operation };
+  }
 
   const secondaryPageId = TRAC_SECONDARY_ROUTE_PAGE_IDS[pathname];
   if (secondaryPageId != null) {

@@ -1,15 +1,14 @@
 import { useMemo } from 'react';
-import type { ItineraryScope } from '@solvera/pace-core/itinerary';
 import { buildNotesByResourceKey } from '@/features/itinerary/build-assignment-notes';
 import { buildItineraryModel } from '@/features/itinerary/build-itinerary-model';
 import { useItineraryAudience } from '@/features/itinerary/hooks/useItineraryAudience';
-import { useEventAssignments } from '@/features/itinerary/hooks/useEventAssignments';
+import type { useEventAssignments } from '@/features/itinerary/hooks/useEventAssignments';
 import {
   buildDisplayByResourceKey,
   mapAssignmentsToItineraryInput,
   mapLogisticsToItineraryResources,
 } from '@/features/itinerary/map-logistics-to-itinerary-input';
-import type { ItineraryModel, ItineraryViewMode } from '@/features/itinerary/types';
+import type { ItineraryModel } from '@/features/itinerary/types';
 import {
   useAccommodationList,
   useActivityList,
@@ -17,44 +16,35 @@ import {
 } from '@/features/planning/hooks/useLogisticsList';
 import { usePlanningScope } from '@/features/planning/hooks/usePlanningScope';
 
+export type EventAssignmentsResult = ReturnType<typeof useEventAssignments>;
+
 export interface UseItineraryViewModelOptions {
-  viewMode: ItineraryViewMode;
-  /** Selected participant application for participant view; required when viewMode is participant. */
-  participantApplicationId: string | null;
   eventDefaultTimezone?: string | null;
+  eventAssignments: EventAssignmentsResult;
 }
-
-function scopeForView(
-  viewMode: ItineraryViewMode,
-  participantApplicationId: string | null
-): ItineraryScope | undefined {
-  if (viewMode === 'participant' && participantApplicationId != null) {
-    return { mode: 'participant', participantApplicationId };
-  }
-  return { mode: 'all' };
-}
-
-/** @deprecated Use ItineraryViewMode */
-export type ItineraryViewTab = 'event' | 'personal';
 
 export function useItineraryViewModel(options: UseItineraryViewModelOptions) {
-  const { viewMode, participantApplicationId, eventDefaultTimezone = null } = options;
+  const { eventDefaultTimezone = null, eventAssignments } = options;
 
   const { isReady, isLoading: scopeLoading } = usePlanningScope();
   const transport = useTransportList();
   const accommodation = useAccommodationList();
   const activity = useActivityList();
-  const { assignments, isLoading: assignmentsLoading, isError: assignmentsError, error: assignmentsErrorObj } =
-    useEventAssignments();
+  const {
+    assignments,
+    isLoading: assignmentsLoading,
+    isError: assignmentsError,
+    error: assignmentsErrorObj,
+  } = eventAssignments;
   const audience = useItineraryAudience();
 
-  const logisticsLoading =
-    transport.isLoading ||
-    accommodation.isLoading ||
-    activity.isLoading ||
-    assignmentsLoading;
+  const logisticsCoreLoading =
+    transport.isLoading || accommodation.isLoading || activity.isLoading;
 
-  const isLoading = scopeLoading || (isReady && logisticsLoading);
+  const logisticsLoading = logisticsCoreLoading || assignmentsLoading;
+
+  const isLoading = scopeLoading;
+  const isLogisticsLoading = isReady && logisticsLoading;
 
   const isError =
     transport.isError ||
@@ -96,33 +86,17 @@ export function useItineraryViewModel(options: UseItineraryViewModelOptions) {
     [assignments]
   );
 
-  const effectiveViewMode: ItineraryViewMode = useMemo(() => {
-    if (audience.mode === 'participant') return 'participant';
-    return viewMode;
-  }, [audience.mode, viewMode]);
-
-  const effectiveParticipantId = useMemo(() => {
-    if (audience.mode === 'participant') {
-      return audience.participantApplicationId;
-    }
-    if (effectiveViewMode === 'participant') {
-      return participantApplicationId;
-    }
-    return null;
-  }, [audience.mode, audience.participantApplicationId, effectiveViewMode, participantApplicationId]);
+  const participantApplicationId = audience.participantApplicationId;
 
   const notesByResourceKey = useMemo(
-    () =>
-      effectiveViewMode === 'participant'
-        ? buildNotesByResourceKey(assignments, effectiveParticipantId)
-        : {},
-    [assignments, effectiveParticipantId, effectiveViewMode]
+    () => buildNotesByResourceKey(assignments, participantApplicationId),
+    [assignments, participantApplicationId]
   );
 
   const model: ItineraryModel | null = useMemo(() => {
     if (audience.mode === 'day_visitor') return null;
 
-    if (effectiveViewMode === 'participant' && effectiveParticipantId == null) {
+    if (participantApplicationId == null) {
       return {
         dayGroups: [],
         visibleDateRange: null,
@@ -132,12 +106,12 @@ export function useItineraryViewModel(options: UseItineraryViewModelOptions) {
       };
     }
 
-    const scope = scopeForView(effectiveViewMode, effectiveParticipantId);
+    if (isLogisticsLoading) return null;
 
     return buildItineraryModel({
       resources,
       assignments: assignmentInputs,
-      scope,
+      scope: { mode: 'participant', participantApplicationId },
       eventDefaultTimezone,
       displayByResourceKey,
       notesByResourceKey,
@@ -146,20 +120,20 @@ export function useItineraryViewModel(options: UseItineraryViewModelOptions) {
     assignmentInputs,
     audience.mode,
     displayByResourceKey,
-    effectiveParticipantId,
-    effectiveViewMode,
     eventDefaultTimezone,
+    isLogisticsLoading,
     notesByResourceKey,
+    participantApplicationId,
     resources,
   ]);
 
   return {
     audience,
     model,
-    effectiveViewMode,
-    effectiveParticipantId,
+    participantApplicationId,
     assignments,
     isLoading,
+    isLogisticsLoading,
     isError,
     error,
     transportItems: transport.items,

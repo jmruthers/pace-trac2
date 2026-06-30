@@ -20,6 +20,7 @@ export const TRAC_CANONICAL_PAGE_NAMES = [
   TRAC_PAGE_NAMES.dashboard,
   TRAC_PAGE_NAMES.itinerary,
   TRAC_PAGE_NAMES.journal,
+  TRAC_PAGE_NAMES.masterplan,
   TRAC_PAGE_NAMES.planning,
   TRAC_PAGE_NAMES.risks,
 ] as const;
@@ -61,8 +62,8 @@ describe('trac-route-permissions', () => {
     expect(uniquePageNames).toEqual(routableCanonical);
   });
 
-  it('defines eight canonical TRAC page keys matching rbac_app_pages', () => {
-    expect(TRAC_CANONICAL_PAGE_NAMES).toHaveLength(8);
+  it('defines nine canonical TRAC page keys matching rbac_app_pages', () => {
+    expect(TRAC_CANONICAL_PAGE_NAMES).toHaveLength(9);
     for (const pageName of TRAC_CANONICAL_PAGE_NAMES) {
       expect(pageName).toMatch(PASCAL_PAGE_RE);
     }
@@ -93,7 +94,14 @@ describe('trac-route-permissions', () => {
       pageName: TRAC_PAGE_NAMES.currencyRates,
       operation: 'read',
     });
-    expect(getTracRoutePermissionForPath('/')).toBeUndefined();
+    expect(getTracRoutePermissionForPath('/masterplan')).toEqual({
+      pageName: TRAC_PAGE_NAMES.masterplan,
+      operation: 'read',
+    });
+    expect(getTracRoutePermissionForPath('/')).toEqual({
+      pageName: TRAC_PAGE_NAMES.dashboard,
+      operation: 'read',
+    });
     expect(getTracRoutePermissionForPath('/dashboard')).toEqual({
       pageName: TRAC_PAGE_NAMES.dashboard,
       operation: 'read',

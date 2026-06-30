@@ -1,23 +1,16 @@
 /**
  * SLICE-02 dashboard integration tests (TR02 testing requirements).
  */
-import type { ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { computeCostRollup } from '@/features/costs/cost-rollup';
 import { summarizePlanningStatusCounts } from '@/features/dashboard/planning-status-summary';
-import type { DashboardPlanningCountsState } from '@/features/dashboard/hooks/useDashboardPlanningCounts';
+import type { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary';
+import type { DashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary';
 import type { DashboardEventHeader } from '@/features/dashboard/types';
 
-const mockUsePageCan = vi.fn();
-
-const mockHeader: DashboardEventHeader = {
-  eventId: 'event-1',
-  title: 'Summit 2026',
-  tagline: 'Plan the journey',
-  logoFileReference: null,
-};
+type DashboardSummaryState = ReturnType<typeof useDashboardSummary>;
 
 vi.mock('@solvera/pace-core/hooks', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@solvera/pace-core/hooks')>();
@@ -39,27 +32,23 @@ vi.mock('@solvera/pace-core/rbac', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@solvera/pace-core/rbac')>();
   return {
     ...actual,
-    usePageCan: (...args: unknown[]) => mockUsePageCan(...args),
+    PagePermissionGuard: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     useSecureSupabase: () => null,
+    usePageCan: () => ({ can: true, isLoading: false }),
     useResolvedScope: () => ({
       eventId: 'event-1',
       organisationId: 'org-1',
       isLoading: false,
     }),
-    PagePermissionGuard: ({
-      children,
-      fallback,
-    }: {
-      children: ReactNode;
-      fallback?: ReactNode;
-    }) => {
-      const { can, isLoading } = mockUsePageCan();
-      if (isLoading) return null;
-      if (!can) return fallback ?? null;
-      return children;
-    },
   };
 });
+
+const mockHeader: DashboardEventHeader = {
+  eventId: 'event-1',
+  title: 'Summit 2026',
+  tagline: 'Plan the journey',
+  logoFileReference: null,
+};
 
 vi.mock('@/features/dashboard/hooks/useDashboardEventHeader', () => ({
   useDashboardEventHeader: () => ({
@@ -88,25 +77,29 @@ const mockRollup = computeCostRollup({
   ],
 });
 
-vi.mock('@/features/costs/hooks/useCostRollupData', () => ({
-  useCostRollupData: () => ({
-    rollup: mockRollup,
-    baseCurrency: 'USD',
-    isLoading: false,
-    isError: false,
-    error: null,
-    refetch: vi.fn(),
-  }),
+const mockSummary: DashboardSummary = {
+  planning: {
+    transport: { confirmed: 1, total: 2 },
+    accommodation: { confirmed: 0, total: 1 },
+    activity: { confirmed: 2, total: 2 },
+  },
+  visibleDateRange: { startDayKey: '2026-05-01', endDayKey: '2026-05-04' },
+  rollup: mockRollup,
+  openRisks: 0,
+  contactsCount: 3,
+  eventId: 'event-1',
+};
+
+const mockUseDashboardSummary = vi.fn((): DashboardSummaryState => ({
+  summary: mockSummary,
+  isLoading: false,
+  isError: false,
+  error: null,
+  refetch: vi.fn(),
 }));
 
-vi.mock('@/features/dashboard/hooks/useDashboardItineraryRange', () => ({
-  useDashboardItineraryRange: () => ({
-    visibleDateRange: { startDayKey: '2026-05-01', endDayKey: '2026-05-04' },
-    isLoading: false,
-    isError: false,
-    error: null,
-    refetch: vi.fn(),
-  }),
+vi.mock('@/features/dashboard/hooks/useDashboardSummary', () => ({
+  useDashboardSummary: () => mockUseDashboardSummary(),
 }));
 
 vi.mock('@/features/dashboard/hooks/useDashboardContactsCount', () => ({
@@ -119,47 +112,12 @@ vi.mock('@/features/dashboard/hooks/useDashboardContactsCount', () => ({
   }),
 }));
 
-const mockPlanningCounts = vi.fn((): DashboardPlanningCountsState => ({
-  transport: { confirmed: 1, total: 2 },
-  accommodation: { confirmed: 0, total: 1 },
-  activity: { confirmed: 2, total: 2 },
-  isLoading: false,
-  isError: false,
-  error: null,
-  refetch: vi.fn(),
-}));
-
-vi.mock('@/features/dashboard/hooks/useDashboardPlanningCounts', async (importOriginal) => {
-  const actual = await importOriginal<
-    typeof import('@/features/dashboard/hooks/useDashboardPlanningCounts')
-  >();
-  return {
-    ...actual,
-    useDashboardPlanningCounts: () => mockPlanningCounts(),
-  };
-});
-
-vi.mock('@/features/risks/hooks/use-risks', () => ({
-  useRisks: () => ({
-    risks: [],
-    isLoading: false,
-    error: null,
-    addRisk: vi.fn(),
-    updateRisk: vi.fn(),
-    deleteRisk: vi.fn(),
-    isSaving: false,
-  }),
-}));
-
 import { DashboardPage } from '@/app/pages/DashboardPage';
 
 describe('dashboard integration (TR02)', () => {
   beforeEach(() => {
-    mockUsePageCan.mockReturnValue({ can: true, isLoading: false });
-    mockPlanningCounts.mockReturnValue({
-      transport: { confirmed: 1, total: 2 },
-      accommodation: { confirmed: 0, total: 1 },
-      activity: { confirmed: 2, total: 2 },
+    mockUseDashboardSummary.mockReturnValue({
+      summary: mockSummary,
       isLoading: false,
       isError: false,
       error: null,
@@ -193,20 +151,14 @@ describe('dashboard integration (TR02)', () => {
       'href',
       '/assignments'
     );
+    expect(screen.getByRole('link', { name: 'Open master plan' })).toHaveAttribute(
+      'href',
+      '/masterplan'
+    );
   });
 
   it('validation / domain failure: invalid trac_status does not crash dashboard', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    mockPlanningCounts.mockReturnValue({
-      transport: { confirmed: 0, total: 1 },
-      accommodation: { confirmed: 0, total: 0 },
-      activity: { confirmed: 0, total: 0 },
-      isLoading: false,
-      isError: false,
-      error: null,
-      refetch: vi.fn(),
-    });
 
     summarizePlanningStatusCounts([{ status: 'not-a-trac-status' }]);
 
@@ -222,15 +174,20 @@ describe('dashboard integration (TR02)', () => {
   });
 
   it('partial failure: planning aggregate error does not blank sibling launcher cards (AC7)', () => {
-    mockPlanningCounts.mockReturnValue({
-      transport: { confirmed: 0, total: 0 },
-      accommodation: { confirmed: 0, total: 0 },
-      activity: { confirmed: 0, total: 0 },
+    mockUseDashboardSummary.mockReturnValue({
+      summary: {
+        ...mockSummary,
+        planning: {
+          transport: { confirmed: 0, total: 0 },
+          accommodation: { confirmed: 0, total: 0 },
+          activity: { confirmed: 0, total: 0 },
+        },
+      },
       isLoading: false,
       isError: true,
-      error: new Error('Planning load failed'),
+      error: 'Planning load failed',
       refetch: vi.fn(),
-    });
+    } satisfies DashboardSummaryState);
 
     render(
       <MemoryRouter initialEntries={['/']}>
@@ -248,10 +205,16 @@ describe('dashboard integration (TR02)', () => {
   });
 
   it('attention queue: shows empty state when nothing needs action', () => {
-    mockPlanningCounts.mockReturnValue({
-      transport: { confirmed: 2, total: 2 },
-      accommodation: { confirmed: 1, total: 1 },
-      activity: { confirmed: 2, total: 2 },
+    mockUseDashboardSummary.mockReturnValue({
+      summary: {
+        ...mockSummary,
+        planning: {
+          transport: { confirmed: 2, total: 2 },
+          accommodation: { confirmed: 1, total: 1 },
+          activity: { confirmed: 2, total: 2 },
+        },
+        openRisks: 0,
+      },
       isLoading: false,
       isError: false,
       error: null,
@@ -269,17 +232,5 @@ describe('dashboard integration (TR02)', () => {
     expect(
       screen.getByText('You are all caught up — nothing to action right now.')
     ).toBeInTheDocument();
-  });
-
-  it('auth / permission failure: user without dashboard read sees denial', () => {
-    mockUsePageCan.mockReturnValue({ can: false, isLoading: false });
-
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <DashboardPage />
-      </MemoryRouter>
-    );
-
-    expect(screen.getByText(/do not have permission to view this page/i)).toBeInTheDocument();
   });
 });

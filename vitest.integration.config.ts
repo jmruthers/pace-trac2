@@ -10,6 +10,7 @@ export default defineConfig({
   },
   resolve: {
     alias: resolveAlias,
+    dedupe: ['react', 'react-dom', 'react-router-dom'],
   },
   test: {
     ...sharedTestOptions,

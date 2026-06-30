@@ -6,9 +6,7 @@ import type {
 import type { Coordinates, LogisticsResourceKind } from '@/features/planning/types';
 import type { TracStatus, TransportMode } from '@/features/planning/enums';
 
-export type ItineraryAudienceMode = 'planner' | 'participant' | 'day_visitor' | 'dual';
-
-export type ItineraryViewMode = 'planner' | 'participant';
+export type ItineraryAudienceMode = 'participant' | 'day_visitor';
 
 export interface ViewerApplication {
   id: string;
@@ -44,6 +42,10 @@ export interface ItineraryResourceDisplay {
   finishLocationLabel?: string | null;
   /** End instant for time range column (transport arrival, activity finish). */
   endTime?: string | null;
+  /** IANA zone for the start/departure/check-in instant. */
+  startTimezone?: string | null;
+  /** IANA zone for the end/arrival/finish instant. */
+  endTimezone?: string | null;
   /** Set for accommodation rows — used for same-local-day check-in/out copy. */
   checkInTime?: string;
   checkOutTime?: string;

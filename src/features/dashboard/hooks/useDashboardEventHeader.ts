@@ -12,6 +12,7 @@ interface CoreEventRow {
   description: string | null;
   participant_blurb: string | null;
   logo_id: string | null;
+  logo: Record<string, unknown> | Record<string, unknown>[] | null;
 }
 
 function mapFileReference(row: Record<string, unknown>): FileReference {
@@ -39,6 +40,14 @@ function resolveTagline(row: CoreEventRow): string | null {
   return blurb || null;
 }
 
+function resolveLogoFileReference(row: CoreEventRow): FileReference | null {
+  const embedded = row.logo;
+  if (embedded == null) return null;
+  const fileRow = Array.isArray(embedded) ? embedded[0] : embedded;
+  if (fileRow == null || typeof fileRow !== 'object') return null;
+  return mapFileReference(fileRow as Record<string, unknown>);
+}
+
 export function useDashboardEventHeader() {
   const { selectedEvent, isLoading: eventsLoading } = useEvents();
   const secureSupabase = asDashboardReadClient(useSecureSupabase());
@@ -54,7 +63,9 @@ export function useDashboardEventHeader() {
 
       const { data: eventRow, error: eventError } = await secureSupabase
         .from('core_events')
-        .select('event_name, description, participant_blurb, logo_id')
+        .select(
+          'event_name, description, participant_blurb, logo_id, logo:core_file_references!logo_id(id, table_name, record_id, file_path, file_metadata, app_id, is_public, created_at, updated_at)'
+        )
         .eq('event_id', eventId)
         .maybeSingle();
 
@@ -71,27 +82,11 @@ export function useDashboardEventHeader() {
         typeof selectedEvent?.name === 'string' ? selectedEvent.name.trim() : '';
       const title = row.event_name?.trim() || contextName || 'Event';
 
-      let logoFileReference: FileReference | null = null;
-      if (row.logo_id) {
-        const { data: fileRow, error: fileError } = await secureSupabase
-          .from('core_file_references')
-          .select('id, table_name, record_id, file_path, file_metadata, app_id, is_public, created_at, updated_at')
-          .eq('id', row.logo_id)
-          .maybeSingle();
-
-        if (fileError != null) {
-          throw new Error(fileError.message);
-        }
-        if (fileRow != null) {
-          logoFileReference = mapFileReference(fileRow as Record<string, unknown>);
-        }
-      }
-
       return {
         eventId,
         title,
         tagline: resolveTagline(row),
-        logoFileReference,
+        logoFileReference: resolveLogoFileReference(row),
       };
     },
     staleTime: 60_000,

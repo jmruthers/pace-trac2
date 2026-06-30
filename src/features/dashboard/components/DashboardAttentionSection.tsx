@@ -1,13 +1,22 @@
 import { useMemo } from 'react';
 import { AttentionSection } from '@solvera/pace-core/components';
-import { useDashboardPlanningCounts } from '@/features/dashboard/hooks/useDashboardPlanningCounts';
-import { useRisks } from '@/features/risks/hooks/use-risks';
+import type { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary';
 
-export function DashboardAttentionSection() {
-  const { transport, accommodation, activity } = useDashboardPlanningCounts();
-  const { risks } = useRisks();
+type DashboardSummaryState = ReturnType<typeof useDashboardSummary>;
+
+interface DashboardAttentionSectionProps {
+  summaryState: DashboardSummaryState;
+}
+
+export function DashboardAttentionSection({ summaryState }: DashboardAttentionSectionProps) {
+  const { summary, isLoading } = summaryState;
 
   const items = useMemo(() => {
+    if (isLoading || summary == null) {
+      return [];
+    }
+
+    const { transport, accommodation, activity } = summary.planning;
     const attention: Array<{
       id: string;
       title: string;
@@ -36,20 +45,19 @@ export function DashboardAttentionSection() {
       });
     }
 
-    const openRisks = risks.filter((risk) => risk.status !== 'Complete').length;
-    if (openRisks > 0) {
+    if (summary.openRisks > 0) {
       attention.push({
         id: 'open-risks',
         title: 'Open risks',
         kind: 'Risks',
-        sub: `${openRisks} risk${openRisks === 1 ? '' : 's'} not complete`,
+        sub: `${summary.openRisks} risk${summary.openRisks === 1 ? '' : 's'} not complete`,
         href: '/risks',
         tone: 'warn',
       });
     }
 
     return attention;
-  }, [activity, accommodation, risks, transport]);
+  }, [isLoading, summary]);
 
   return <AttentionSection items={items} />;
 }

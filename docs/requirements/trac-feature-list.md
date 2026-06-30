@@ -91,11 +91,11 @@
 
 | ID | Feature (atomic, testable) | Sources |
 |----|----------------------------|---------|
-| F-05-01 | **Planner** sees full event itinerary: all relevant logistics rows merged into one timeline ordered by `trac_transport.departure_time`, `trac_activity.start_time`, `trac_accommodation.check_in_time` respectively; tie-breaker: resource type, then stable id. | SLICE-05 §Rebuild target |
+| F-05-01 | **`/itinerary`** shows the signed-in viewer's **personal** schedule only — logistics rows assigned to their `base_application`, merged into one timeline ordered by CR25 day-entry rules. Full event schedule is on **`/masterplan`** (F-10). | SLICE-05 §Rebuild target |
 | F-05-02 | **Planner** sees optional map with legs; coordinates from logistics row snapshots (DEC-083); empty state when no coordinates. | SLICE-05 §Rebuild target; SLICE-05 §Verification |
 | F-05-03 | **Participant** sees only logistics rows they are assigned to; RLS assumes **Option A** on logistics `SELECT` (planning permission OR matching assignment for their `base_application`). | SLICE-05 §Rebuild target; SLICE-05 §API / Contract; architecture §Logistics RLS — participant read path |
 | F-05-04 | **Day visitor / no `base_application`:** explicit messaging that personalised logistics are unavailable (not silent empty). | SLICE-05 §Overview; SLICE-05 §Rebuild target; SLICE-05 §Acceptance criteria 3 |
-| F-05-05 | **Dual role:** single `/itinerary` with sections or tabs rather than duplicating routes (unless IA later adds `/my-itinerary`). | SLICE-05 §Overview; architecture §Explainer — participant vs planner |
+| F-05-05 | **`/itinerary`** is personal-only; **`/masterplan`** is the full-event composite for planners with **`read:page.masterplan`**. | SLICE-05 §Overview; architecture §Information architecture (v1) |
 | F-05-06 | No mutation of logistics or assignments on `/itinerary`. | SLICE-05 §Acceptance criteria 4; SLICE-05 §Do not |
 | F-05-07 | Timezone disclaimer or per-row timezone display aligned with Master Plan contract. | SLICE-05 §Acceptance criteria 5; architecture §Composite contracts — Dashboard & Master Plan |
 | F-05-08 | Participant `/itinerary` assumes completed pace-core2 **Option A** `SELECT` RLS state; implementation/tests verify this on dev-db. | SLICE-05 §Platform dependency; architecture §Planning stage resolutions |
@@ -197,5 +197,5 @@
 | X-01 | BASE scanning, boarding, and other BASE/TRAC operational flows (except silent data linkage above). | architecture §Planning stage resolutions; trac-project-brief §Known exclusions |
 | X-02 | MINT application integration beyond DB reads of cost-related data. | trac-project-brief §Known exclusions; SLICE-07 |
 | X-03 | Production DB as authority for docs/validation. | trac-project-brief §Known exclusions |
-| X-04 | Dedicated participant-only **TRAC** route `/my-itinerary` for v1 (deferred; use role-based `/itinerary`; portal may host a separate member-facing entry using the same contract). | architecture §Information architecture (v1) |
+| X-04 | Dedicated participant-only **TRAC** route `/my-itinerary` for v1 (deferred; use personal **`/itinerary`**; full event on **`/masterplan`**). | architecture §Information architecture (v1) |
 | X-05 | Optional: dedicated `assignments` RBAC page key (later refinement). | architecture §Contracts; SLICE-04 |

@@ -122,7 +122,7 @@ TRAC v1 page keys are **lowercase kebab-case** slugs identical to `rbac_app_page
 
 - **`/assignments`** shares **`planning`** (no dedicated `assignments` page key).
 - **`masterplan`** is one word (kebab-valid); route is **`/masterplan`**, not `/master-plan`.
-- **`/`, `/dashboard`:** shell path map does not resolve these; access is enforced by **`PagePermissionGuard`** on `DashboardPage` only.
+- **`/`, `/dashboard`:** shell route registry + `routeAccessDenied` enforce read access; pages do not wrap content in read `PagePermissionGuard`.
 
 App source of truth for route → `pageName`: `src/app/navigation/trac-nav-definitions.ts` and `src/app/navigation/trac-route-permissions.ts`.
 
@@ -144,7 +144,7 @@ App source of truth for route → `pageName`: `src/app/navigation/trac-nav-defin
 
 **Primary navigation (max five items per CR05c):** Overview (`/dashboard`), Planning, Itinerary, Costs, Risks — inline at `lg+` via pace-core `NavigationMenu`. Assignments, Contacts, Journal, and Master Plan are **deep-link routes** (event overview launcher / hubs), not primary nav items. `/currency-rates` is RBAC-controlled management and is not in primary nav. Landing context shows a single **Events** item when no event is selected.
 
-**Deferred / not in v1 IA:** Separate participant-only **TRAC** URL (e.g. `/my-itinerary`) — use **role-based content** on `/itinerary` unless product later splits routes. A **portal-hosted** member route that consumes the same participant itinerary contract is allowed and does **not** count as a TRAC IA change.
+**v1 IA split:** **`/itinerary`** is always the signed-in viewer's **personal** schedule (participant contract). **`/masterplan`** is the full-event operational summary for planners with **`read:page.masterplan`**. A **portal-hosted** member route that consumes the same participant itinerary contract is allowed and does **not** count as a TRAC IA change.
 
 ---
 
@@ -164,7 +164,7 @@ This section is the **explicit v1 contract** for TRAC composite surfaces. It is 
 | **Contacts card** | Links to `/contacts`; shows contact count. |
 | **Assignments link** | Lightweight link to `/assignments`; no additional assignment aggregate required for v1. |
 | **Partial failure policy** | **Hybrid policy.** Route/event gating failures are handled at the **route/shell** level via `ProtectedRoute requireEvent`. Once route access is established, **event identity/header data is critical**: if selected-event metadata required for page identity cannot load, show a page-level error state. After header identity is established, launcher cards degrade **independently**. A failure in one upstream aggregate must not blank the whole page. Failed launcher cards show inline error/retry messaging; successful regions still render. Empty states are not errors. KPI row may show neutral placeholders when an aggregate fails; it must not crash the page. |
-| **Permissions** | Page content guarded by **`PagePermissionGuard pageName=\"dashboard\" operation=\"read\"`** once the required TRAC page registration / permission seeding prerequisite is present on dev-db. |
+| **Permissions** | Route read enforced by shell `routeAccessDenied` + **`dashboard`** page key in route registry once the required TRAC page registration / permission seeding prerequisite is present on dev-db. |
 
 ### Master Plan
 

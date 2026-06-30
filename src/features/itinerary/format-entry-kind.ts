@@ -55,6 +55,31 @@ export function formatEntryTimeShort(iso: string | null, timeZone?: string): str
   return formatInTimeZone(iso, resolveEntryTimeZone(timeZone), 'HH:mm');
 }
 
+/** Card instant label — full local datetime when a journey spans calendar days. */
+export function formatEntryInstantForCard(
+  iso: string | null,
+  timeZone: string | undefined,
+  showFullDateTime: boolean
+): string {
+  if (iso == null) return '';
+  if (showFullDateTime) {
+    return formatOrderingTime(iso, timeZone);
+  }
+  return formatEntryTimeShort(iso, timeZone);
+}
+
+export function entryInstantsSpanDifferentLocalDays(
+  startIso: string,
+  endIso: string,
+  startTimeZone?: string,
+  endTimeZone?: string
+): boolean {
+  return (
+    localDayKey(startIso, resolveEntryTimeZone(startTimeZone)) !==
+    localDayKey(endIso, resolveEntryTimeZone(endTimeZone))
+  );
+}
+
 /** Human-readable timezone caption for entry row time column. */
 export function formatEntryTimezoneLabel(timeZone?: string): string {
   const zone = resolveEntryTimeZone(timeZone);

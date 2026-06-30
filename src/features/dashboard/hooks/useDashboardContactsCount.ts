@@ -1,13 +1,13 @@
-import { useContacts } from '@/features/contacts/hooks/use-contacts';
+import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary';
 
 export function useDashboardContactsCount() {
-  const { contacts, isLoading, error, refreshContacts } = useContacts();
+  const { summary, isLoading, isError, error, refetch } = useDashboardSummary();
 
   return {
-    count: contacts.length,
+    count: summary?.contactsCount ?? 0,
     isLoading,
-    isError: error != null,
+    isError,
     error: error != null ? new Error(error) : null,
-    refetch: refreshContacts,
+    refetch,
   };
 }

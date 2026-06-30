@@ -5,4 +5,5 @@ export { TRAC_DASHBOARD_QUERY_PREFIX };
 export const dashboardQueryKeys = {
   all: TRAC_DASHBOARD_QUERY_PREFIX,
   header: (eventId: string) => [...TRAC_DASHBOARD_QUERY_PREFIX, 'header', eventId] as const,
+  summary: (eventId: string) => [...TRAC_DASHBOARD_QUERY_PREFIX, 'summary', eventId] as const,
 };

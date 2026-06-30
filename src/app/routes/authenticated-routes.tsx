@@ -1,3 +1,4 @@
+import { lazy, Suspense, type ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -22,17 +23,51 @@ import {
   TRAC_AUTHENTICATED_HOME_PATH,
   resolveUserDashboardRedirectTarget,
 } from '@/app/routes/route-redirects';
-import { DashboardPage } from '@/app/pages/DashboardPage';
 import { TracEventsLandingPage } from '@/app/pages/landing/TracEventsLandingPage';
-import { ContactsPage } from '@/app/pages/ContactsPage';
-import { JournalPage } from '@/app/pages/JournalPage';
-import { AssignmentsPage } from '@/app/pages/AssignmentsPage';
-import { PlanningPage } from '@/app/pages/PlanningPage';
-import { RisksPage } from '@/app/pages/RisksPage';
-import { ItineraryPage } from '@/app/pages/ItineraryPage';
-import { CostsPage } from '@/app/pages/CostsPage';
-import { CurrencyRatesPage } from '@/app/pages/CurrencyRatesPage';
 import { NotFoundPage } from '@/app/pages/NotFoundPage';
+
+const DashboardPage = lazy(() =>
+  import('@/app/pages/DashboardPage').then((module) => ({ default: module.DashboardPage }))
+);
+const ContactsPage = lazy(() =>
+  import('@/app/pages/ContactsPage').then((module) => ({ default: module.ContactsPage }))
+);
+const JournalPage = lazy(() =>
+  import('@/app/pages/JournalPage').then((module) => ({ default: module.JournalPage }))
+);
+const AssignmentsPage = lazy(() =>
+  import('@/app/pages/AssignmentsPage').then((module) => ({ default: module.AssignmentsPage }))
+);
+const PlanningPage = lazy(() =>
+  import('@/app/pages/PlanningPage').then((module) => ({ default: module.PlanningPage }))
+);
+const RisksPage = lazy(() =>
+  import('@/app/pages/RisksPage').then((module) => ({ default: module.RisksPage }))
+);
+const ItineraryPage = lazy(() =>
+  import('@/app/pages/ItineraryPage').then((module) => ({ default: module.ItineraryPage }))
+);
+const CostsPage = lazy(() =>
+  import('@/app/pages/CostsPage').then((module) => ({ default: module.CostsPage }))
+);
+const CurrencyRatesPage = lazy(() =>
+  import('@/app/pages/CurrencyRatesPage').then((module) => ({ default: module.CurrencyRatesPage }))
+);
+const MasterPlanPage = lazy(() =>
+  import('@/app/pages/MasterPlanPage').then((module) => ({ default: module.MasterPlanPage }))
+);
+
+function RoutePageFallback() {
+  return (
+    <section className="grid min-h-[50vh] place-items-center px-4" aria-busy="true">
+      <LoadingSpinner label="Loading page…" />
+    </section>
+  );
+}
+
+function LazyRoutePage({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<RoutePageFallback />}>{children}</Suspense>;
+}
 
 function getUserDisplayName(user: {
   email?: string;
@@ -50,21 +85,6 @@ function getUserDisplayName(user: {
   const combined = `${firstName} ${lastName}`.trim();
   if (combined !== '') return combined;
   return user.email?.trim() ?? '';
-}
-
-function useTracShellRouteAccessDenied(): boolean {
-  const { pathname } = useLocation();
-  const routePermission = getTracRoutePermissionForPath(pathname);
-  const pageName = routePermission?.pageName ?? '';
-  const { can, isLoading } = usePageCan(
-    pageName,
-    routePermission?.operation ?? 'read',
-    undefined,
-    pageName || undefined
-  );
-  if (routePermission == null) return false;
-  if (isLoading) return false;
-  return !can;
 }
 
 function EventScopedOutlet() {
@@ -89,7 +109,17 @@ function AuthenticatedShellLayout() {
   useContextTheme();
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const routeAccessDenied = useTracShellRouteAccessDenied();
+  const routePermission = getTracRoutePermissionForPath(pathname);
+  const pageName = routePermission?.pageName ?? '';
+  const operation = routePermission?.operation ?? 'read';
+  const { can, isLoading: pageCanLoading } = usePageCan(
+    pageName,
+    operation,
+    undefined,
+    pageName || undefined
+  );
+  const routeAccessDenied =
+    routePermission != null && pageName !== '' && !pageCanLoading && !can;
   const { selectedEvent, setSelectedEvent } = useOptionalEvents();
   const { user, signOut, updatePassword } = useUnifiedAuthContext();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -187,15 +217,86 @@ export function AuthenticatedRoutes() {
         />
         <Route index element={<TracEventsLandingPage />} />
         <Route element={<EventScopedOutlet />}>
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="planning" element={<PlanningPage />} />
-          <Route path="assignments" element={<AssignmentsPage />} />
-          <Route path="itinerary" element={<ItineraryPage />} />
-          <Route path="contacts" element={<ContactsPage />} />
-          <Route path="journal" element={<JournalPage />} />
-          <Route path="risks" element={<RisksPage />} />
-          <Route path="costs" element={<CostsPage />} />
-          <Route path="currency-rates" element={<CurrencyRatesPage />} />
+          <Route
+            path="dashboard"
+            element={
+              <LazyRoutePage>
+                <DashboardPage />
+              </LazyRoutePage>
+            }
+          />
+          <Route
+            path="planning"
+            element={
+              <LazyRoutePage>
+                <PlanningPage />
+              </LazyRoutePage>
+            }
+          />
+          <Route
+            path="assignments"
+            element={
+              <LazyRoutePage>
+                <AssignmentsPage />
+              </LazyRoutePage>
+            }
+          />
+          <Route
+            path="itinerary"
+            element={
+              <LazyRoutePage>
+                <ItineraryPage />
+              </LazyRoutePage>
+            }
+          />
+          <Route
+            path="contacts"
+            element={
+              <LazyRoutePage>
+                <ContactsPage />
+              </LazyRoutePage>
+            }
+          />
+          <Route
+            path="journal"
+            element={
+              <LazyRoutePage>
+                <JournalPage />
+              </LazyRoutePage>
+            }
+          />
+          <Route
+            path="risks"
+            element={
+              <LazyRoutePage>
+                <RisksPage />
+              </LazyRoutePage>
+            }
+          />
+          <Route
+            path="costs"
+            element={
+              <LazyRoutePage>
+                <CostsPage />
+              </LazyRoutePage>
+            }
+          />
+          <Route
+            path="currency-rates"
+            element={
+              <LazyRoutePage>
+                <CurrencyRatesPage />
+              </LazyRoutePage>
+            }
+          />
+          <Route
+            path="masterplan"
+            element={
+              <LazyRoutePage>
+                <MasterPlanPage />
+              </LazyRoutePage>
+            }
+          />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>
